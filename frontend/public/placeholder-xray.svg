@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" fill="none">
+  <rect width="400" height="400" fill="#e2e8f0"/>
+  <ellipse cx="200" cy="120" rx="70" ry="55" fill="#cbd5e1"/>
+  <path d="M130 180 Q200 220 270 180 L280 360 Q200 340 120 360 Z" fill="#94a3b8" opacity="0.6"/>
+  <text x="200" y="390" text-anchor="middle" fill="#64748b" font-family="system-ui" font-size="14">Chest X-Ray Placeholder</text>
+</svg>

@@ -1,0 +1,271 @@
+# =============================================================================
+# CareVision AI — Root .gitignore
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Environment & secrets
+# -----------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# -----------------------------------------------------------------------------
+# Python
+# -----------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+pip-log.txt
+pip-delete-this-directory.txt
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+*.mo
+*.pot
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+instance/
+.webassets-cache
+.scrapy
+docs/_build/
+target/
+.ipynb_checkpoints
+profile_default/
+ipython_config.py
+.python-version
+.pdm.toml
+.pdm-python
+.pdm-build/
+__pypackages__/
+celerybeat-schedule
+celerybeat.pid
+*.sage.py
+.spyderproject
+.spyproject
+.ropeproject
+/site
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+cython_debug/
+.ruff_cache/
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# -----------------------------------------------------------------------------
+# Node.js
+# -----------------------------------------------------------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+pids
+*.pid
+*.seed
+*.pid.lock
+lib-cov
+coverage
+.nyc_output
+.grunt
+bower_components
+.lock-wscript
+build/Release
+jspm_packages/
+web_modules/
+*.tsbuildinfo
+.npm
+.eslintcache
+.stylelintcache
+.node_repl_history
+*.tgz
+.yarn-integrity
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.cache/
+.parcel-cache
+.next/
+out/
+.nuxt/
+dist/
+.vuepress/dist
+.serverless/
+.fusebox/
+.dynamodb/
+.tern-port
+.vscode-test
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# -----------------------------------------------------------------------------
+# TensorFlow / ML artifacts
+# -----------------------------------------------------------------------------
+*.h5
+*.hdf5
+*.keras
+*.pb
+*.tflite
+*.onnx
+saved_model/
+checkpoints/
+logs/
+tensorboard/
+runs/
+wandb/
+mlruns/
+.neptune/
+.dvc/
+*.weights
+*.ckpt
+*.ckpt.*
+*.index
+*.meta
+*.data-*
+
+# Keep example or documented placeholders; ignore trained weights in model/
+model/**/*.h5
+model/**/*.keras
+model/**/*.pb
+model/checkpoints/
+model/logs/
+
+# -----------------------------------------------------------------------------
+# Dataset (large files — do not commit raw data)
+# -----------------------------------------------------------------------------
+dataset/raw/
+dataset/processed/
+dataset/**/*.zip
+dataset/**/*.tar
+dataset/**/*.tar.gz
+dataset/**/*.7z
+dataset/**/*.csv
+dataset/**/*.jpg
+dataset/**/*.jpeg
+dataset/**/*.png
+dataset/**/*.dcm
+dataset/**/*.nii
+dataset/**/*.nii.gz
+
+# -----------------------------------------------------------------------------
+# PostgreSQL & databases
+# -----------------------------------------------------------------------------
+*.sql.backup
+*.dump
+pgdata/
+postgres-data/
+.docker/postgres/
+
+# -----------------------------------------------------------------------------
+# VS Code & editors
+# -----------------------------------------------------------------------------
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json.example
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+*.sublime-workspace
+*.sublime-project
+
+# -----------------------------------------------------------------------------
+# OS & misc
+# -----------------------------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+*.tmp
+*.temp
+*.bak
+
+# -----------------------------------------------------------------------------
+# Uploads & generated reports (runtime)
+# -----------------------------------------------------------------------------
+uploads/
+backend/uploads/
+temp/
+backend/temp/
+reports/
+backend/reports/
+
+
+# -----------------------------------------------------------------------------
+# Docker (local overrides)
+# -----------------------------------------------------------------------------
+docker-compose.override.yml
+
+# Vercel / Next
+.vercel/
+frontend/.vercel/
+frontend/.next/
+frontend/out/
+
+# Backend local files
+backend/.env
+backend/.env.*
+backend/.venv/
+backend/venv/
+
+# Frontend env
+frontend/.env
+frontend/.env.*
+frontend/.env.local
+
+# Python cache anywhere
+**/__pycache__/
+**/*.pyc
