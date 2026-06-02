@@ -1,41 +1,34 @@
 # CareVision AI — Frontend
 
-Next.js web application for chest X-ray upload, analysis results, scan history, and reports.
-
-## Stack
-
-- **Next.js** (App Router)
-- **React**
-- **Tailwind CSS**
-- **TypeScript**
-
-## Setup
-
-```powershell
-cd frontend
-npm install
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000).
+Next.js 16 app for chest X-ray analysis. Connects to the local FastAPI backend at **http://localhost:8000**.
 
 ## Pages
 
 | Route | Description |
 |-------|-------------|
-| `/` | Home — overview and recent scans (dummy data) |
-| `/analyze` | Upload X-ray and simulated AI results |
-| `/history` | Scan history table |
-| `/reports` | Report list and detail (`?id=scan-001`) |
+| `/` | Home — overview and recent scans |
+| `/analyze` | Upload X-ray, run `POST /predict`, view results |
+| `/history` | `GET /scans` — scan cards |
+| `/scans/[scanId]` | `GET /scans/{id}` — scan details + **Download PDF** (`GET /scans/{id}/report`) |
 
-## Dummy data
+## Setup
 
-Sample scans and reports live in `lib/dummy-data.ts`. Backend integration will replace these with API calls later.
-
-## Environment (future)
-
-When connecting the API, add to the project root `.env`:
-
-```env
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1
+```bash
+cd frontend
+npm install
+cp .env.local.example .env.local   # optional; default API URL is localhost:8000
+npm run dev
 ```
+
+Open [http://localhost:3000](http://localhost:3000). Ensure the backend is running:
+
+```bash
+cd backend
+uvicorn app.main:app --reload
+```
+
+## Stack
+
+- Next.js (App Router), React 19, TypeScript
+- Tailwind CSS v4
+- `lib/api.ts` — REST client for predict, scans, and PDF download

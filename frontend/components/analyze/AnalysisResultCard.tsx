@@ -1,20 +1,18 @@
-import Image from "next/image";
 import { ShieldCheck } from "lucide-react";
 import type { AnalysisResult } from "@/lib/types";
 import { formatPercent } from "@/lib/utils";
 import { ConfidenceBar } from "@/components/ConfidenceBar";
+import { HeatmapPanel } from "@/components/HeatmapPanel";
 import { PredictionBadge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 
 interface AnalysisResultCardProps {
   result: AnalysisResult;
-  imagePreviewUrl: string;
+  /** Prefer server-stored image URL after analysis; fall back to local preview. */
+  imageUrl: string;
 }
 
-export function AnalysisResultCard({
-  result,
-  imagePreviewUrl,
-}: AnalysisResultCardProps) {
+export function AnalysisResultCard({ result, imageUrl }: AnalysisResultCardProps) {
   return (
     <Card className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -39,45 +37,29 @@ export function AnalysisResultCard({
         <div className="mb-2 flex items-center gap-2 text-emerald-800">
           <ShieldCheck className="h-4 w-4 shrink-0" aria-hidden />
           <p className="text-xs font-semibold uppercase tracking-wide">
-            Safe recommendation
+            Recommendation
           </p>
         </div>
         <p className="text-sm leading-relaxed text-slate-700">
-          {result.safeRecommendation}
+          {result.recommendation}
         </p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
           <p className="border-b border-slate-100 px-3 py-2 text-xs font-medium text-slate-600">
-            Your X-ray
+            Uploaded X-ray
           </p>
           <div className="relative aspect-square bg-slate-50">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={imagePreviewUrl}
+              src={imageUrl}
               alt="Analyzed chest X-ray"
               className="h-full w-full object-contain p-2"
             />
           </div>
         </div>
-
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-          <p className="border-b border-slate-100 px-3 py-2 text-xs font-medium text-slate-600">
-            Grad-CAM heatmap
-          </p>
-          <div className="relative aspect-square bg-slate-900/5">
-            <Image
-              src={result.heatmapPath}
-              alt="Grad-CAM heatmap placeholder"
-              fill
-              className="object-contain p-2"
-            />
-          </div>
-          <p className="px-3 py-2 text-[10px] text-slate-400 sm:text-xs">
-            Placeholder — live heatmap when model is connected
-          </p>
-        </div>
+        <HeatmapPanel heatmapUrl={result.heatmapUrl} />
       </div>
     </Card>
   );

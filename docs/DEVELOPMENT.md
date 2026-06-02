@@ -44,7 +44,7 @@ Ensure you are at the project root (`CareVision-AI/`):
 CareVision-AI/
 ├── backend/
 ├── frontend/
-├── model/
+├── backend/model/
 ├── dataset/
 ├── docs/
 ├── .env.example
@@ -160,11 +160,11 @@ source .venv/bin/activate
 python -m pip install --upgrade pip
 ```
 
-When `backend/requirements.txt` and `model/requirements.txt` exist:
+When `backend/requirements.txt` and `backend/model/requirements.txt` exist:
 
 ```bash
 pip install -r backend/requirements.txt
-pip install -r model/requirements.txt
+pip install -r backend/model/requirements.txt
 ```
 
 ### TensorFlow notes
@@ -175,14 +175,14 @@ pip install -r model/requirements.txt
 
 ### Train or obtain a model
 
-After training scripts are added under `model/`:
+After training scripts are added under `backend/model/`:
 
 ```bash
-cd model
+cd backend/model
 python train.py   # exact command TBD when implemented
 ```
 
-Place exported weights at the path specified by `MODEL_PATH` in `.env` (default: `./model/artifacts/pneumonia_classifier.keras`).
+Place exported weights at the path specified by `MODEL_PATH` in `.env` (default: `./backend/model/chest_xray_model.h5`).
 
 ---
 

@@ -2,10 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CloudUpload, FileImage, X } from "lucide-react";
+import {
+  ACCEPT_FILE_ATTRIBUTE,
+  MAX_XRAY_SIZE_MB,
+  validateXRayFile,
+} from "@/lib/validate-image";
 import { cn } from "@/lib/utils";
-
-const MAX_SIZE_MB = 10;
-const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/jpg"];
 
 interface XRayUploadPanelProps {
   previewUrl: string | null;
@@ -33,13 +35,9 @@ export function XRayUploadPanel({
     (file: File | null) => {
       if (!file) return;
 
-      if (!ACCEPTED_TYPES.includes(file.type)) {
-        onError("Please upload a PNG or JPEG chest X-ray.");
-        return;
-      }
-
-      if (file.size > MAX_SIZE_MB * 1024 * 1024) {
-        onError(`File must be smaller than ${MAX_SIZE_MB} MB.`);
+      const validation = validateXRayFile(file);
+      if (!validation.valid) {
+        onError(validation.message);
         return;
       }
 
@@ -68,7 +66,7 @@ export function XRayUploadPanel({
   }, [previewUrl]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {!previewUrl ? (
         <div
           onDragOver={(e) => {
@@ -89,7 +87,9 @@ export function XRayUploadPanel({
           <p className="text-sm font-medium text-slate-800">
             Drag & drop chest X-ray
           </p>
-          <p className="mt-1 text-xs text-slate-500">PNG or JPEG · max {MAX_SIZE_MB} MB</p>
+          <p className="mt-1 text-xs text-slate-500">
+            PNG or JPEG only · max {MAX_XRAY_SIZE_MB} MB
+          </p>
           <button
             type="button"
             disabled={disabled}
@@ -101,7 +101,7 @@ export function XRayUploadPanel({
           <input
             ref={inputRef}
             type="file"
-            accept={ACCEPTED_TYPES.join(",")}
+            accept={ACCEPT_FILE_ATTRIBUTE}
             className="sr-only"
             disabled={disabled}
             onChange={(e) => {
@@ -111,7 +111,7 @@ export function XRayUploadPanel({
           />
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-900/5">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-900/5 shadow-sm">
           <div className="flex items-center justify-between border-b border-slate-200 bg-white px-3 py-2 sm:px-4">
             <p className="flex items-center gap-2 truncate text-xs font-medium text-slate-600 sm:text-sm">
               <FileImage className="h-4 w-4 shrink-0 text-teal-600" aria-hidden />
@@ -147,7 +147,7 @@ export function XRayUploadPanel({
             <input
               ref={inputRef}
               type="file"
-              accept={ACCEPTED_TYPES.join(",")}
+              accept={ACCEPT_FILE_ATTRIBUTE}
               className="sr-only"
               disabled={disabled}
               onChange={(e) => {
@@ -159,11 +159,11 @@ export function XRayUploadPanel({
         </div>
       )}
 
-      {error && (
-        <p className="text-sm text-rose-600" role="alert">
+      {error ? (
+        <p className="text-sm font-medium text-rose-600" role="alert">
           {error}
         </p>
-      )}
+      ) : null}
     </div>
   );
 }

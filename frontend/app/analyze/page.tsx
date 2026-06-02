@@ -1,16 +1,18 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { AlertCircle, Loader2, Sparkles } from "lucide-react";
+import Link from "next/link";
+import { FileText, Loader2, Sparkles } from "lucide-react";
 import { AnalysisLoadingState } from "@/components/analyze/AnalysisLoadingState";
 import { AnalysisResultCard } from "@/components/analyze/AnalysisResultCard";
 import { XRayUploadPanel } from "@/components/analyze/XRayUploadPanel";
 import { PageHeader } from "@/components/PageHeader";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorAlert } from "@/components/ui/ErrorAlert";
+import { MedicalDisclaimer } from "@/components/ui/MedicalDisclaimer";
 import { Card } from "@/components/ui/Card";
-import { getDummyAnalysisResult } from "@/lib/dummy-data";
+import { PredictApiError, predictXray } from "@/lib/api";
 import type { AnalysisResult } from "@/lib/types";
-
-const ANALYZE_DELAY_MS = 2000;
 
 export default function AnalyzePage() {
   const [patientName, setPatientName] = useState("");
@@ -18,6 +20,7 @@ export default function AnalyzePage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [analyzeError, setAnalyzeError] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
 
@@ -35,6 +38,7 @@ export default function AnalyzePage() {
       setPreviewUrl(url);
       setResult(null);
       setUploadError(null);
+      setAnalyzeError(null);
     },
     [previewUrl, revokePreview],
   );
@@ -46,40 +50,45 @@ export default function AnalyzePage() {
     setPreviewUrl(null);
     setResult(null);
     setUploadError(null);
+    setAnalyzeError(null);
   }, [previewUrl, revokePreview]);
 
   const canAnalyze = Boolean(file && previewUrl) && !isAnalyzing;
 
-  const handleAnalyze = () => {
-    if (!canAnalyze) return;
+  const handleAnalyze = async () => {
+    if (!file || !canAnalyze) return;
 
     setIsAnalyzing(true);
     setResult(null);
+    setAnalyzeError(null);
 
-    window.setTimeout(() => {
-      setResult(getDummyAnalysisResult());
+    try {
+      const analysis = await predictXray(file, patientName);
+      setResult(analysis);
+    } catch (err) {
+      const message =
+        err instanceof PredictApiError
+          ? err.message
+          : "Something went wrong during analysis. Please try again.";
+      setAnalyzeError(message);
+    } finally {
       setIsAnalyzing(false);
-    }, ANALYZE_DELAY_MS);
+    }
   };
 
   return (
-    <div className="bg-gradient-to-b from-slate-50 to-white">
+    <div className="page-shell">
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
         <PageHeader
           title="Analyze X-Ray"
-          description="Upload a chest radiograph for AI-assisted pneumonia screening. Preview your image, run analysis, and review results below."
+          description="Upload a chest radiograph for AI-assisted pneumonia screening. Results are saved to your local scan history."
         />
 
-        <div className="mb-6 flex items-start gap-3 rounded-xl border border-amber-200/80 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-          <p>
-            Demo mode: analysis uses sample data. Images stay in your browser and
-            are not uploaded to a server.
-          </p>
+        <div className="mb-6">
+          <MedicalDisclaimer compact />
         </div>
 
         <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
-          {/* Upload column */}
           <div className="space-y-4">
             <Card>
               <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-900">
@@ -119,7 +128,7 @@ export default function AnalyzePage() {
               <button
                 type="button"
                 disabled={!canAnalyze}
-                onClick={handleAnalyze}
+                onClick={() => void handleAnalyze()}
                 className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-teal-600 px-4 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
               >
                 {isAnalyzing ? (
@@ -134,38 +143,47 @@ export default function AnalyzePage() {
 
               {!file && (
                 <p className="mt-3 text-center text-xs text-slate-500">
-                  Upload an image to enable analysis
+                  Upload a valid PNG or JPEG to enable analysis
                 </p>
               )}
             </Card>
           </div>
 
-          {/* Results column */}
           <div className="lg:sticky lg:top-20">
-            <h2 className="mb-4 text-sm font-semibold text-slate-900">
-              Results
-            </h2>
+            <h2 className="mb-4 text-sm font-semibold text-slate-900">Results</h2>
 
             {isAnalyzing && <AnalysisLoadingState />}
 
-            {!isAnalyzing && result && previewUrl && (
-              <AnalysisResultCard result={result} imagePreviewUrl={previewUrl} />
+            {!isAnalyzing && analyzeError && (
+              <ErrorAlert title="Analysis failed" message={analyzeError} />
             )}
 
-            {!isAnalyzing && !result && (
-              <Card className="flex min-h-[280px] flex-col items-center justify-center px-6 py-12 text-center sm:min-h-[360px]">
-                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
-                  <Sparkles className="h-7 w-7" aria-hidden />
-                </div>
-                <p className="text-sm font-medium text-slate-700">
-                  No results yet
-                </p>
-                <p className="mt-2 max-w-xs text-xs leading-relaxed text-slate-500 sm:text-sm">
-                  Upload a chest X-ray and select{" "}
-                  <span className="font-medium text-slate-600">Analyze X-Ray</span>{" "}
-                  to view prediction, confidence, and heatmap.
-                </p>
-              </Card>
+            {!isAnalyzing && !analyzeError && result && previewUrl && (
+              <div className="space-y-4">
+                <AnalysisResultCard
+                  result={result}
+                  imageUrl={result.imageUrl || previewUrl}
+                />
+                {result.scanId != null && (
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <Link
+                      href={`/scans/${result.scanId}`}
+                      className="btn-secondary flex-1 justify-center"
+                    >
+                      <FileText className="h-4 w-4" aria-hidden />
+                      View scan details
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {!isAnalyzing && !analyzeError && !result && (
+              <EmptyState
+                icon={Sparkles}
+                title="No results yet"
+                description="Upload a chest X-ray and select Analyze X-Ray to view prediction, confidence, and heatmap."
+              />
             )}
           </div>
         </div>

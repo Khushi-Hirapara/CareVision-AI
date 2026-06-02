@@ -1,5 +1,5 @@
 from app.schemas.health import HealthResponse
-from app.schemas.scan import ScanCreate, ScanResponse, ScanUpdate, ScanWithUser
+from app.schemas.scan import ScanCreate, ScanListResponse, ScanResponse, ScanUpdate, ScanWithUser
 from app.schemas.user import UserCreate, UserResponse, UserUpdate
 
 __all__ = [
@@ -8,6 +8,7 @@ __all__ = [
     "UserResponse",
     "UserUpdate",
     "ScanCreate",
+    "ScanListResponse",
     "ScanResponse",
     "ScanUpdate",
     "ScanWithUser",

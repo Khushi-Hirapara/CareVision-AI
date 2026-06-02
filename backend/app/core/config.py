@@ -1,3 +1,7 @@
+"""
+Application settings loaded from the repository root `.env` file.
+"""
+
 from functools import lru_cache
 from pathlib import Path
 from typing import List
@@ -5,7 +9,7 @@ from typing import List
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# Project root (CareVision-AI/) — four levels up from this file
+# backend/app/core/config.py → CareVision-AI/ (repo root)
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 ENV_FILE = PROJECT_ROOT / ".env"
 
@@ -27,9 +31,8 @@ class Settings(BaseSettings):
     # Backend API
     backend_host: str = Field(default="0.0.0.0", alias="BACKEND_HOST")
     backend_port: int = Field(default=8000, alias="BACKEND_PORT")
-    api_prefix: str = Field(default="/api/v1", alias="API_PREFIX")
 
-    # CORS
+    # CORS (frontend on localhost)
     cors_origins: str = Field(
         default="http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173",
         alias="CORS_ORIGINS",
@@ -41,7 +44,7 @@ class Settings(BaseSettings):
         alias="DATABASE_URL",
     )
 
-    # Uploads & reports (used by future routes)
+    # Uploads & reports
     upload_dir: str = Field(default="./backend/uploads", alias="UPLOAD_DIR")
     max_upload_size_mb: int = Field(default=10, alias="MAX_UPLOAD_SIZE_MB")
     allowed_image_extensions: str = Field(
@@ -50,17 +53,28 @@ class Settings(BaseSettings):
     )
     reports_dir: str = Field(default="./backend/reports", alias="REPORTS_DIR")
 
-    # Model (used by future inference service)
+    # Model inference
     model_path: str = Field(
-        default="./model/artifacts/pneumonia_classifier.keras",
+        default="./backend/model/chest_xray_model.h5",
         alias="MODEL_PATH",
     )
     model_input_size: int = Field(default=224, alias="MODEL_INPUT_SIZE")
+    prediction_threshold: float = Field(
+        default=0.9,
+        alias="PREDICTION_THRESHOLD",
+        description="Sigmoid threshold: pneumonia_prob >= value => PNEUMONIA (else NORMAL).",
+    )
     model_confidence_threshold: float = Field(
         default=0.5,
         alias="MODEL_CONFIDENCE_THRESHOLD",
+        description="Deprecated: use PREDICTION_THRESHOLD for inference decisions.",
     )
     enable_grad_cam: bool = Field(default=True, alias="ENABLE_GRAD_CAM")
+    grad_cam_layer_name: str | None = Field(
+        default=None,
+        alias="GRAD_CAM_LAYER_NAME",
+        description="Optional Keras layer name for Grad-CAM (e.g. top_conv on EfficientNet).",
+    )
 
     @field_validator("cors_origins", mode="before")
     @classmethod
@@ -91,6 +105,13 @@ class Settings(BaseSettings):
     @property
     def reports_path(self) -> Path:
         path = Path(self.reports_dir)
+        if not path.is_absolute():
+            path = PROJECT_ROOT / path
+        return path
+
+    @property
+    def resolved_model_path(self) -> Path:
+        path = Path(self.model_path)
         if not path.is_absolute():
             path = PROJECT_ROOT / path
         return path

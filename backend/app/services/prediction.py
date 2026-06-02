@@ -1,24 +1,23 @@
-import hashlib
-import shutil
+"""Orchestrates TensorFlow inference, Grad-CAM, and recommendation text for /predict."""
+
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 
-from app.core.config import Settings
-from app.schemas.predict import PredictionLabel
-from app.services.upload import to_storage_path
+from fastapi import HTTPException, status
 
-_RECOMMENDATIONS: dict[PredictionLabel, str] = {
-    "Normal": (
-        "No strong radiographic indicators of pneumonia were detected on this screening. "
-        "Continue routine clinical care unless symptoms suggest otherwise. "
-        "This AI output is decision-support only—not a definitive diagnosis."
-    ),
-    "Pneumonia": (
-        "Findings may be consistent with pneumonia. Correlate with clinical symptoms, "
-        "vital signs, and laboratory results. Consider follow-up imaging or specialist "
-        "consultation if clinically indicated. This output is decision-support only—not "
-        "a definitive diagnosis."
-    ),
+from app.core.config import Settings
+from app.core.http_errors import error_detail
+from app.schemas.predict import PredictionLabel
+from app.services.grad_cam import try_generate_grad_cam_heatmap
+from app.services.ml_inference import run_model_inference
+from app.services.recommendations import build_recommendation
+from app.services.upload import to_storage_path
+logger = logging.getLogger(__name__)
+
+_MODEL_LABEL_TO_API: dict[str, PredictionLabel] = {
+    "NORMAL": "Normal",
+    "PNEUMONIA": "Pneumonia",
 }
 
 
@@ -28,44 +27,54 @@ class PredictionResult:
     confidence: float
     recommendation: str
     image_path: str
-    heatmap_path: str
-
-
-def _dummy_label_and_confidence(image_path: Path) -> tuple[PredictionLabel, float]:
-    """Deterministic placeholder inference until the trained model is wired in."""
-    digest = hashlib.sha256(image_path.name.encode()).hexdigest()
-    bucket = int(digest[:8], 16) % 100
-    prediction: PredictionLabel = "Pneumonia" if bucket >= 45 else "Normal"
-    if prediction == "Pneumonia":
-        confidence = 62.0 + (bucket % 35)
-    else:
-        confidence = 68.0 + (bucket % 30)
-    return prediction, min(confidence, 99.0)
-
-
-def _write_dummy_heatmap(source_image: Path, settings: Settings) -> Path:
-    """Copy the source image as a stand-in heatmap until Grad-CAM is implemented."""
-    heatmap_dir = settings.upload_path / "heatmaps"
-    heatmap_dir.mkdir(parents=True, exist_ok=True)
-    heatmap_path = heatmap_dir / f"{source_image.stem}_heatmap{source_image.suffix}"
-    shutil.copy2(source_image, heatmap_path)
-    return heatmap_path
+    heatmap_path: str | None
 
 
 def run_prediction(image_path: Path, settings: Settings) -> PredictionResult:
-    prediction, confidence = _dummy_label_and_confidence(image_path)
-    recommendation = _RECOMMENDATIONS[prediction]
+    try:
+        inference = run_model_inference(image_path, settings)
+    except FileNotFoundError as exc:
+        logger.exception("Model weights not found for %s", settings.resolved_model_path)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=error_detail(settings, exc, context="Model weights not found"),
+        ) from exc
+    except Exception as exc:
+        logger.exception("Model inference failed for %s", image_path)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=error_detail(settings, exc, context="Model inference failed"),
+        ) from exc
 
-    heatmap_file = (
-        _write_dummy_heatmap(image_path, settings)
-        if settings.enable_grad_cam
-        else image_path
+    logger.info(
+        "Prediction pipeline: raw_sigmoid_output=%.6f pneumonia_probability=%.6f "
+        "normal_probability=%.6f threshold=%.2f final_prediction=%s confidence=%.2f%%",
+        inference.raw_output,
+        inference.pneumonia_probability,
+        inference.normal_probability,
+        settings.prediction_threshold,
+        inference.prediction,
+        inference.confidence,
+    )
+
+    prediction = _MODEL_LABEL_TO_API.get(inference.prediction)
+    if prediction is None:
+        msg = f"Unexpected model label: {inference.prediction}"
+        logger.error(msg)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=msg,
+        )
+
+    recommendation = build_recommendation(prediction)
+    heatmap_file = try_generate_grad_cam_heatmap(
+        image_path, inference.prediction, settings
     )
 
     return PredictionResult(
         prediction=prediction,
-        confidence=round(confidence, 1),
+        confidence=inference.confidence,
         recommendation=recommendation,
         image_path=to_storage_path(image_path),
-        heatmap_path=to_storage_path(heatmap_file),
+        heatmap_path=to_storage_path(heatmap_file) if heatmap_file else None,
     )

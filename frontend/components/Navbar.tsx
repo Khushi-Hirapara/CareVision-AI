@@ -2,14 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, FileText, History, Home, Upload } from "lucide-react";
+import { Activity, History, Home, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const links = [
   { href: "/", label: "Home", icon: Home },
   { href: "/analyze", label: "Analyze X-Ray", icon: Upload },
-  { href: "/history", label: "History", icon: History },
-  { href: "/reports", label: "Reports", icon: FileText },
+  { href: "/history", label: "Scan History", icon: History },
 ];
 
 export function Navbar() {
@@ -35,7 +34,9 @@ export function Navbar() {
         <nav className="hidden items-center gap-1 md:flex" aria-label="Main">
           {links.map(({ href, label, icon: Icon }) => {
             const active =
-              href === "/" ? pathname === "/" : pathname.startsWith(href);
+              href === "/"
+                ? pathname === "/"
+                : pathname === href || pathname.startsWith(`${href}/`);
             return (
               <Link
                 key={href}
@@ -60,7 +61,9 @@ export function Navbar() {
         >
           {links.map(({ href, label, icon: Icon }) => {
             const active =
-              href === "/" ? pathname === "/" : pathname.startsWith(href);
+              href === "/"
+                ? pathname === "/"
+                : pathname === href || pathname.startsWith(`${href}/`);
             return (
               <Link
                 key={href}

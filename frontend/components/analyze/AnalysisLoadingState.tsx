@@ -16,7 +16,7 @@ export function AnalysisLoadingState() {
           Analyzing X-ray…
         </div>
         <p className="mt-2 max-w-xs text-xs leading-relaxed text-slate-500 sm:text-sm">
-          Running pneumonia screening and generating explainability map (demo).
+          Uploading your study and running pneumonia screening on the server…
         </p>
       </div>
 

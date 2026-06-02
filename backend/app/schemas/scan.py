@@ -40,5 +40,10 @@ class ScanResponse(ScanBase):
     created_at: datetime
 
 
+class ScanListResponse(BaseModel):
+    items: list[ScanResponse]
+    total: int
+
+
 class ScanWithUser(ScanResponse):
     user: UserResponse

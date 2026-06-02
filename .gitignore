@@ -170,11 +170,11 @@ mlruns/
 *.data-*
 
 # Keep example or documented placeholders; ignore trained weights in model/
-model/**/*.h5
-model/**/*.keras
-model/**/*.pb
-model/checkpoints/
-model/logs/
+backend/model/**/*.h5
+backend/model/**/*.keras
+backend/model/**/*.pb
+backend/model/checkpoints/
+backend/model/logs/
 
 # -----------------------------------------------------------------------------
 # Dataset (large files — do not commit raw data)
@@ -256,8 +256,6 @@ frontend/.next/
 frontend/out/
 
 # Backend local files
-backend/.env
-backend/.env.*
 backend/.venv/
 backend/venv/
 

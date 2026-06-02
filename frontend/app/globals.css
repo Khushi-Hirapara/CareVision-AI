@@ -4,7 +4,7 @@
   --background: #f8fafc;
   --foreground: #0f172a;
   --primary: #0d9488;
-  --primary-light: #ccfbf1;
+  --primary-hover: #0f766e;
   --card: #ffffff;
   --muted: #64748b;
   --border: #e2e8f0;
@@ -20,4 +20,58 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-dm-sans), system-ui, sans-serif;
+}
+
+::selection {
+  background: #99f6e4;
+  color: #134e4a;
+}
+
+/* Shared button styles for consistent CTAs */
+.btn-primary {
+  @apply inline-flex items-center gap-2 rounded-xl bg-teal-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2;
+}
+
+.btn-secondary {
+  @apply inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-300 focus:ring-offset-2;
+}
+
+.page-shell {
+  @apply min-h-[calc(100vh-8rem)] bg-gradient-to-b from-slate-50 to-white;
+}
+
+/* Scan history cards — vertical layout, full patient names */
+.scan-history-card {
+  @apply overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition duration-200;
+}
+
+.scan-history-card:hover {
+  @apply border-teal-200/80 shadow-md;
+}
+
+.scan-history-card__media {
+  @apply relative aspect-[5/4] w-full overflow-hidden border-b border-slate-100 bg-slate-950;
+}
+
+.scan-history-card__name {
+  @apply text-base font-semibold leading-snug tracking-tight text-slate-900 break-words sm:text-lg;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.scan-history-card__btn {
+  @apply inline-flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition;
+}
+
+.scan-history-card__btn--primary {
+  @apply bg-teal-600 text-white shadow-sm hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2;
+}
+
+/* Scan detail page */
+.scan-detail-back {
+  @apply inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 sm:w-auto;
+}
+
+.scan-detail-imaging {
+  @apply transition hover:border-teal-200/60 hover:shadow-md;
 }

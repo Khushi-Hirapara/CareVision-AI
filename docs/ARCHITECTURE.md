@@ -12,7 +12,7 @@ CareVision AI is organized as a **modular monorepo** with clear separation betwe
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                              CareVision AI                                  │
 ├──────────────┬──────────────┬──────────────┬──────────────┬─────────────────┤
-│   dataset/   │    model/    │   backend/   │  frontend/   │     docs/       │
+│   dataset/   │   backend/   │  frontend/   │     docs/                    │
 │  Data assets │ Train & infer│  REST API    │  Web UI      │  Documentation  │
 └──────────────┴──────────────┴──────────────┴──────────────┴─────────────────┘
 ```
@@ -20,8 +20,8 @@ CareVision AI is organized as a **modular monorepo** with clear separation betwe
 | Directory   | Responsibility |
 |------------|----------------|
 | `dataset/` | Raw and processed chest X-ray images, splits, and data-pipeline artifacts |
-| `model/`   | Training scripts, saved weights, evaluation, and inference utilities (including Grad-CAM) |
 | `backend/` | HTTP API, authentication, persistence, file uploads, inference orchestration, PDF generation |
+| `backend/model/` | Training scripts, saved weights, evaluation, and inference utilities (including Grad-CAM) |
 | `frontend/`| Web application for upload, results, explanations, history, and reports |
 | `docs/`    | Architecture, development, and operational documentation |
 
@@ -107,7 +107,7 @@ The machine learning subsystem is responsible for:
 - **Training** — CNN-based (or transfer-learning) classifier for pneumonia vs. normal (extensible to multi-class).
 - **Evaluation** — Metrics such as accuracy, precision, recall, F1, and confusion matrix.
 - **Inference API** — Functions callable by the backend: `predict(image)`, `explain(image)` for Grad-CAM.
-- **Artifact management** — Versioned weights under `model/artifacts/` (gitignored; documented in setup guides).
+- **Artifact management** — Versioned weights under `backend/model/` (gitignored; documented in setup guides).
 
 Grad-CAM highlights regions that most influenced the model’s decision, supporting clinical transparency. Layer selection may be configured via environment variables (see `.env.example`).
 
