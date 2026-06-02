@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Download, Loader2 } from "lucide-react";
 import { getScanReportUrl } from "@/lib/api";
+import { apiFetch } from "@/lib/api-client";
 
 interface DownloadReportButtonProps {
   scanId: string;
@@ -39,7 +40,7 @@ export function DownloadReportButton({
     setError(null);
 
     try {
-      const response = await fetch(getScanReportUrl(scanId));
+      const response = await apiFetch(getScanReportUrl(scanId));
       if (!response.ok) {
         throw new Error("Could not generate the PDF report.");
       }

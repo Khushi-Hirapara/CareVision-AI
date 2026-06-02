@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -16,6 +15,7 @@ import { formatDate, formatPercent, cn } from "@/lib/utils";
 import { DownloadReportButton } from "@/components/DownloadReportButton";
 import { PredictionBadge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
+import { StudyImage } from "@/components/ui/StudyImage";
 import { MedicalDisclaimer } from "@/components/ui/MedicalDisclaimer";
 
 interface ScanDetailViewProps {
@@ -107,13 +107,13 @@ function ImagingPanel({
       </div>
       {src ? (
         <div className="relative aspect-[4/5] bg-slate-950">
-          <Image
+          <StudyImage
             src={src}
             alt={alt}
             fill
-            className="object-contain p-2"
+            objectFit="contain"
+            className="p-2"
             sizes="(max-width: 1024px) 100vw, 400px"
-            unoptimized
           />
         </div>
       ) : (
@@ -319,7 +319,7 @@ export function ScanDetailView({ scan }: ScanDetailViewProps) {
               <p className="mt-4 text-xs leading-relaxed text-slate-500">
                 The Grad-CAM overlay highlights image regions that most influenced
                 the {scan.prediction} classification. Use alongside clinical
-                judgment—not as a standalone diagnostic map.
+                judgment-not as a standalone diagnostic map.
               </p>
             ) : null}
           </Card>

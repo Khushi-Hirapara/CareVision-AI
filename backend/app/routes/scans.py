@@ -2,10 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
+from app.core.deps import get_current_user
 from app.database import get_db
+from app.models.user import User
 from app.schemas.scan import ScanListResponse, ScanResponse
 from app.services.pdf_report import generate_scan_report_pdf
-from app.services.scan import get_scan_by_id, list_scans
+from app.services.scan import count_scans_for_user, get_scan_for_user, list_scans
 
 router = APIRouter(prefix="/scans", tags=["scans"])
 
@@ -15,12 +17,14 @@ def get_scans(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> ScanListResponse:
-    """List chest X-ray scan history, newest first."""
-    scans = list_scans(db, skip=skip, limit=limit)
+    """List chest X-ray scan history for the authenticated user, newest first."""
+    scans = list_scans(db, user_id=current_user.id, skip=skip, limit=limit)
+    total = count_scans_for_user(db, current_user.id)
     return ScanListResponse(
         items=[ScanResponse.model_validate(scan) for scan in scans],
-        total=len(scans),
+        total=total,
     )
 
 
@@ -28,9 +32,10 @@ def get_scans(
 def download_scan_report(
     scan_id: int,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> Response:
-    """Generate and download a PDF report for a scan."""
-    scan = get_scan_by_id(db, scan_id)
+    """Generate and download a PDF report for a scan owned by the current user."""
+    scan = get_scan_for_user(db, scan_id, current_user.id)
     if scan is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -57,9 +62,10 @@ def download_scan_report(
 def get_scan(
     scan_id: int,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> ScanResponse:
-    """Get a single scan record by id."""
-    scan = get_scan_by_id(db, scan_id)
+    """Get a single scan record by id (must belong to the authenticated user)."""
+    scan = get_scan_for_user(db, scan_id, current_user.id)
     if scan is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

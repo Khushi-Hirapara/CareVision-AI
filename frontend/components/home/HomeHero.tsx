@@ -1,0 +1,118 @@
+"use client";
+
+import Link from "next/link";
+import {
+  ArrowRight,
+  CheckCircle2,
+  LogIn,
+  Sparkles,
+  UserPlus,
+} from "lucide-react";
+import { DashboardPreview } from "@/components/home/DashboardPreview";
+import { useAuth } from "@/components/auth/AuthProvider";
+
+const highlights = [
+  "CNN pneumonia screening",
+  "Grad-CAM explainability",
+  "Secure scan history & PDF reports",
+];
+
+export function HomeHero() {
+  const { isAuthenticated, isLoading, user } = useAuth();
+
+  return (
+    <section className="home-hero relative overflow-hidden">
+      <div
+        className="pointer-events-none absolute inset-0 bg-gradient-to-br from-teal-50 via-white to-cyan-50/40"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute -right-32 top-0 h-[480px] w-[480px] rounded-full bg-teal-200/30 blur-3xl"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute -left-24 bottom-0 h-80 w-80 rounded-full bg-cyan-200/25 blur-3xl"
+        aria-hidden
+      />
+
+      <div className="relative mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20 lg:py-24">
+        <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+          <div className="max-w-xl">
+            <p className="home-hero-badge inline-flex items-center gap-2 rounded-full border border-teal-200/80 bg-white/80 px-3.5 py-1.5 text-xs font-semibold text-teal-800 shadow-sm backdrop-blur-sm">
+              <Sparkles className="h-3.5 w-3.5 text-teal-600" aria-hidden />
+              AI-assisted chest radiography
+            </p>
+
+            <h1 className="mt-5 text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl lg:text-[3.25rem] lg:leading-[1.1]">
+              Clinical-grade{" "}
+              <span className="bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent">
+                X-ray intelligence
+              </span>{" "}
+              on your desk
+            </h1>
+
+            <p className="mt-5 text-base leading-relaxed text-slate-600 sm:text-lg">
+              Upload a chest radiograph, get an instant Normal vs Pneumonia
+              assessment with confidence scoring, visual explanations, and
+              exportable reports-running on your local stack.
+            </p>
+
+            <ul className="mt-6 space-y-2.5">
+              {highlights.map((item) => (
+                <li
+                  key={item}
+                  className="flex items-center gap-2.5 text-sm text-slate-700"
+                >
+                  <CheckCircle2
+                    className="h-4 w-4 shrink-0 text-teal-600"
+                    aria-hidden
+                  />
+                  {item}
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-9 flex flex-wrap items-center gap-3">
+              {!isLoading && isAuthenticated ? (
+                <>
+                  <Link href="/analyze" className="btn-primary shadow-md shadow-teal-600/20">
+                    Analyze X-Ray
+                    <ArrowRight className="h-4 w-4" aria-hidden />
+                  </Link>
+                  <Link href="/history" className="btn-secondary">
+                    View history
+                  </Link>
+                  {user && (
+                    <p className="w-full text-sm text-slate-500 sm:w-auto sm:pl-2">
+                      Welcome back,{" "}
+                      <span className="font-semibold text-slate-700">
+                        {user.name.split(" ")[0]}
+                      </span>
+                    </p>
+                  )}
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/register"
+                    className="btn-primary shadow-md shadow-teal-600/20"
+                  >
+                    <UserPlus className="h-4 w-4" aria-hidden />
+                    Get started free
+                    <ArrowRight className="h-4 w-4" aria-hidden />
+                  </Link>
+                  <Link href="/login" className="btn-secondary">
+                    <LogIn className="h-4 w-4" aria-hidden />
+                    Sign in
+                  </Link>
+                </>
+              )}
+            </div>
+          </div>
+
+          <DashboardPreview />
+        </div>
+      </div>
+    </section>
+  );
+}

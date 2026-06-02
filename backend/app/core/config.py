@@ -4,9 +4,9 @@ Application settings loaded from the repository root `.env` file.
 
 from functools import lru_cache
 from pathlib import Path
-from typing import List
+from typing import Any, List
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # backend/app/core/config.py → CareVision-AI/ (repo root)
@@ -37,6 +37,34 @@ class Settings(BaseSettings):
         default="http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173",
         alias="CORS_ORIGINS",
     )
+
+    # JWT authentication
+    jwt_secret_key: str = Field(
+        default="change-me-to-a-long-random-string",
+        alias="JWT_SECRET_KEY",
+    )
+    jwt_algorithm: str = Field(default="HS256", alias="JWT_ALGORITHM")
+    access_token_expire_minutes: int = Field(
+        default=60,
+        alias="ACCESS_TOKEN_EXPIRE_MINUTES",
+    )
+
+    @model_validator(mode="before")
+    @classmethod
+    def map_legacy_jwt_env(cls, data: Any) -> Any:
+        """Accept SECRET_KEY / ALGORITHM from older .env files."""
+        if not isinstance(data, dict):
+            return data
+        merged = dict(data)
+        if not merged.get("JWT_SECRET_KEY"):
+            legacy = merged.get("SECRET_KEY")
+            if legacy:
+                merged["JWT_SECRET_KEY"] = legacy
+        if not merged.get("JWT_ALGORITHM"):
+            legacy = merged.get("ALGORITHM")
+            if legacy:
+                merged["JWT_ALGORITHM"] = legacy
+        return merged
 
     # Database
     database_url: str = Field(

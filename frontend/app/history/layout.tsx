@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 
 export const metadata: Metadata = {
-  title: "Analyze X-Ray",
+  title: "Scan History",
 };
 
-export default function AnalyzeLayout({
+export default function HistoryLayout({
   children,
 }: {
   children: React.ReactNode;

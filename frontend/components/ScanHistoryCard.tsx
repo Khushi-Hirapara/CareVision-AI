@@ -1,10 +1,10 @@
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Calendar } from "lucide-react";
 import type { ScanRecord } from "@/lib/types";
 import { formatDate, formatPercent } from "@/lib/utils";
 import { DownloadReportButton } from "@/components/DownloadReportButton";
 import { PredictionBadge } from "@/components/ui/Badge";
+import { StudyImage } from "@/components/ui/StudyImage";
 import { cn } from "@/lib/utils";
 
 interface ScanHistoryCardProps {
@@ -18,13 +18,13 @@ export function ScanHistoryCard({ scan }: ScanHistoryCardProps) {
   return (
     <article className="scan-history-card group flex h-full flex-col">
       <div className="scan-history-card__media">
-        <Image
+        <StudyImage
           src={scan.imagePath}
           alt={`Chest X-ray for ${scan.patientName}`}
           fill
-          className="object-contain p-1"
+          objectFit="contain"
+          className="p-1"
           sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
-          unoptimized
         />
       </div>
 

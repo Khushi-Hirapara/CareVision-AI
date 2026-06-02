@@ -102,7 +102,7 @@ export default function HistoryPage() {
                           scans.length) *
                           100,
                       )}%`
-                    : "—",
+                    : "-",
                 accent: "text-slate-800",
               },
             ].map((stat) => (

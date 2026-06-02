@@ -1,5 +1,5 @@
-import Image from "next/image";
 import type { ScanRecord } from "@/lib/types";
+import { StudyImage } from "@/components/ui/StudyImage";
 import { formatDate } from "@/lib/utils";
 import { ConfidenceBar } from "./ConfidenceBar";
 import { PredictionBadge } from "./ui/Badge";
@@ -36,11 +36,12 @@ export function ScanResultCard({ scan }: ScanResultCardProps) {
             X-Ray
           </p>
           <div className="relative aspect-square">
-            <Image
+            <StudyImage
               src={scan.imagePath}
               alt="Chest X-ray"
               fill
-              className="object-contain p-2"
+              objectFit="contain"
+              className="p-2"
             />
           </div>
         </div>
@@ -50,11 +51,12 @@ export function ScanResultCard({ scan }: ScanResultCardProps) {
               Grad-CAM
             </p>
             <div className="relative aspect-square">
-              <Image
+              <StudyImage
                 src={scan.heatmapPath}
                 alt="Grad-CAM heatmap"
                 fill
-                className="object-contain p-2"
+                objectFit="contain"
+                className="p-2"
               />
             </div>
           </div>

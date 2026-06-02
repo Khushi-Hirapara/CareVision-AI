@@ -5,8 +5,10 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.core.config import Settings, get_settings
+from app.core.deps import get_current_user
 from app.core.http_errors import error_detail
 from app.database import get_db
+from app.models.user import User
 from app.schemas.predict import PredictResponse
 from app.services.prediction import run_prediction
 from app.services.scan import create_scan_from_prediction
@@ -26,6 +28,7 @@ async def predict_xray(
     ),
     settings: Settings = Depends(get_settings),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> PredictResponse:
     """Upload a chest X-ray, run TensorFlow inference, save scan, and return results."""
     try:
@@ -53,6 +56,7 @@ async def predict_xray(
     try:
         scan = create_scan_from_prediction(
             db,
+            user_id=current_user.id,
             patient_name=patient_name or "",
             result=result,
         )

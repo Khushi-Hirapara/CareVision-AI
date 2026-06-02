@@ -1,6 +1,6 @@
 # CareVision AI — Backend (FastAPI)
 
-REST API for chest X-ray pneumonia screening. **Authentication is not enabled** in this version.
+REST API for chest X-ray pneumonia screening with JWT authentication.
 
 ## Project structure
 
@@ -61,8 +61,14 @@ uvicorn app.main:app --reload
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/health` | API and database connectivity |
+| POST | `/auth/register` | Register (`name`, `email`, `password`) |
+| POST | `/auth/login` | Login; returns `access_token` and `token_type` |
+| POST | `/predict` | Upload X-ray (requires `Authorization: Bearer <token>`) |
+| GET | `/scans` | List scans for the authenticated user |
+| GET | `/scans/{scan_id}` | Get one scan (owner only) |
+| GET | `/scans/{scan_id}/report` | Download PDF report (owner only) |
 
-Additional routes (`/predict`, `/scans`, …) are registered when those modules are present.
+Set `JWT_SECRET_KEY`, `JWT_ALGORITHM` (default `HS256`), and `ACCESS_TOKEN_EXPIRE_MINUTES` in the root `.env`. Legacy `SECRET_KEY` / `ALGORITHM` are still accepted as aliases.
 
 ## CORS
 
