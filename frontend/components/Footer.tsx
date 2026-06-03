@@ -117,7 +117,7 @@ export function Footer() {
           </p>
           <p className="flex items-center gap-1.5 text-center text-xs text-slate-600">
             <Code2 className="h-3.5 w-3.5" aria-hidden />
-            Local deployment · FastAPI + Next.js
+              
           </p>
         </div>
       </div>

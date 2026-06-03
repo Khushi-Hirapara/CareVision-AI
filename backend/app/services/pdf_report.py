@@ -15,7 +15,6 @@ from reportlab.lib.units import inch
 from reportlab.platypus import (
     HRFlowable,
     Image as RLImage,
-    KeepTogether,
     Paragraph,
     SimpleDocTemplate,
     Spacer,
@@ -371,11 +370,8 @@ def _build_images_section(
     if not xray_path and not heatmap_path:
         return None
 
-    left_cell = KeepTogether(left_items)
-    right_cell = KeepTogether(right_items)
-
     table = Table(
-        [[left_cell, right_cell]],
+        [[left_items, right_items]],
         colWidths=[3.15 * inch, 3.15 * inch],
     )
     table.setStyle(

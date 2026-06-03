@@ -135,7 +135,7 @@ export default function AnalyzePage() {
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
                     Analyzing…
-                  </>
+                  </>   
                 ) : (
                   "Analyze X-Ray"
                 )}
