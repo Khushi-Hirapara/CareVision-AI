@@ -282,7 +282,10 @@ def delete_patient_record(
 @router.post("/{patient_id}/predict", response_model=PredictResponse)
 async def predict_for_patient(
     patient_id: int,
-    file: UploadFile = File(..., description="Chest X-ray image (PNG or JPEG)."),
+    file: UploadFile = File(
+        ...,
+        description="Chest X-ray image (PNG, JPEG, or DICOM .dcm).",
+    ),
     settings: Settings = Depends(get_settings),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_doctor),

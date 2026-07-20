@@ -1,11 +1,8 @@
 import { ShieldCheck } from "lucide-react";
 import type { AnalysisResult } from "@/lib/types";
-import { formatPercent } from "@/lib/utils";
-import { ConfidenceBar } from "@/components/ConfidenceBar";
-import { AiFindingsSection } from "@/components/scans/AiFindingsSection";
-import { FollowUpRecommendationSection } from "@/components/scans/FollowUpRecommendationSection";
+import { AiAnalysisSummaryReport } from "@/components/scans/AiAnalysisSummaryReport";
+import { DicomMetadataPanel } from "@/components/scans/DicomMetadataPanel";
 import { HeatmapPanel } from "@/components/HeatmapPanel";
-import { PredictionBadge, SeverityBadge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 
 interface AnalysisResultCardProps {
@@ -15,69 +12,60 @@ interface AnalysisResultCardProps {
 }
 
 export function AnalysisResultCard({ result, imageUrl }: AnalysisResultCardProps) {
+  const displayImage =
+    imageUrl.startsWith("dicom:") ? result.imageUrl : imageUrl || result.imageUrl;
+
   return (
     <Card className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 className="text-sm font-semibold text-slate-900">Analysis complete</h3>
-        <div className="flex flex-wrap items-center gap-2">
-          <PredictionBadge label={result.prediction} />
-          <SeverityBadge severity={result.severity} />
-        </div>
-      </div>
+      <h3 className="text-sm font-semibold text-slate-900">Analysis complete</h3>
 
-      <div className="rounded-xl border border-slate-100 bg-slate-50/50 p-4">
-        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-          Prediction
-        </p>
-        <p className="mt-1 text-2xl font-bold text-slate-900">{result.prediction}</p>
-        {result.severity !== "None" ? (
-          <p className="mt-2 text-sm font-medium text-slate-600">
-            AI severity:{" "}
-            <span className="font-semibold text-slate-900">{result.severity}</span>
-          </p>
-        ) : null}
-        <div className="mt-4">
-          <ConfidenceBar value={result.confidence} />
-        </div>
-        <p className="mt-2 text-right text-xs text-slate-500">
-          Model confidence: {formatPercent(result.confidence)}
-        </p>
-      </div>
-
-      <AiFindingsSection findings={result.aiFindings} />
-
-      <FollowUpRecommendationSection
-        followUpRecommendation={result.followUpRecommendation}
-        variant={result.prediction === "Pneumonia" ? "pneumonia" : "normal"}
+      <AiAnalysisSummaryReport
+        prediction={result.prediction}
+        confidence={result.confidence}
+        severity={result.severity}
+        observedRegions={result.observedRegions}
+        clinicalSuggestion={result.aiFindings}
+        recommendedNextStep={result.followUpRecommendation}
       />
 
-      <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-4">
-        <div className="mb-2 flex items-center gap-2 text-emerald-800">
-          <ShieldCheck className="h-4 w-4 shrink-0" aria-hidden />
-          <p className="text-xs font-semibold uppercase tracking-wide">
-            Recommendation
+      <DicomMetadataPanel
+        metadata={result.dicomMetadata}
+        originalUrl={result.originalUrl}
+      />
+
+      {result.recommendation ? (
+        <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-4">
+          <div className="mb-2 flex items-center gap-2 text-emerald-800">
+            <ShieldCheck className="h-4 w-4 shrink-0" aria-hidden />
+            <p className="text-xs font-semibold uppercase tracking-wide">
+              Screening Guidance
+            </p>
+          </div>
+          <p className="text-sm leading-relaxed text-slate-700 whitespace-pre-line">
+            {result.recommendation}
           </p>
         </div>
-        <p className="text-sm leading-relaxed text-slate-700">
-          {result.recommendation}
-        </p>
-      </div>
+      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
           <p className="border-b border-slate-100 px-3 py-2 text-xs font-medium text-slate-600">
-            Uploaded X-ray
+            {result.dicomMetadata ? "Converted study image" : "Uploaded X-ray"}
           </p>
           <div className="relative aspect-square bg-slate-50">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={imageUrl}
+              src={displayImage}
               alt="Analyzed chest X-ray"
               className="h-full w-full object-contain p-2"
             />
           </div>
         </div>
-        <HeatmapPanel heatmapUrl={result.heatmapUrl} />
+        <HeatmapPanel
+          heatmapUrl={result.heatmapUrl}
+          affectedArea={result.observedRegions}
+          prediction={result.prediction}
+        />
       </div>
     </Card>
   );

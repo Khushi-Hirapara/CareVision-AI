@@ -10,11 +10,26 @@ class ScanBase(BaseModel):
     patient_name: str = Field(..., min_length=1, max_length=255)
     image_path: str = Field(..., max_length=512)
     heatmap_path: str | None = Field(default=None, max_length=512)
+    original_path: str | None = Field(
+        default=None,
+        max_length=512,
+        description="Original DICOM path when the upload was a .dcm study.",
+    )
+    dicom_metadata: dict | None = Field(
+        default=None,
+        description="Preserved DICOM study metadata (modality, study date, etc.).",
+    )
     prediction: str = Field(..., max_length=64)
     confidence: float = Field(..., ge=0.0, le=1.0)
     severity: SeverityLabel = Field(
         default="None",
         description="AI severity score: None for Normal; Mild/Moderate/Severe for Pneumonia.",
+    )
+    observed_regions: str = Field(
+        ...,
+        description=(
+            "Affected area block: lung side, lobe, and approximate infected region %."
+        ),
     )
     ai_findings: str = Field(
         ...,
@@ -36,11 +51,26 @@ class ScanCreate(BaseModel):
     patient_name: str = Field(..., min_length=1, max_length=255)
     image_path: str = Field(..., max_length=512)
     heatmap_path: str | None = Field(default=None, max_length=512)
+    original_path: str | None = Field(
+        default=None,
+        max_length=512,
+        description="Original DICOM path when the upload was a .dcm study.",
+    )
+    dicom_metadata: dict | None = Field(
+        default=None,
+        description="Preserved DICOM study metadata (modality, study date, etc.).",
+    )
     prediction: str = Field(..., max_length=64)
     confidence: float = Field(..., ge=0.0, le=1.0)
     severity: SeverityLabel = Field(
         default="None",
         description="AI severity score: None for Normal; Mild/Moderate/Severe for Pneumonia.",
+    )
+    observed_regions: str = Field(
+        ...,
+        description=(
+            "Affected area block: lung side, lobe, and approximate infected region %."
+        ),
     )
     ai_findings: str = Field(
         ...,

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, FileText, Upload } from "lucide-react";
+import { ArrowLeft, FileText, GitCompareArrows, LineChart, Upload } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { ScanHistoryCard } from "@/components/ScanHistoryCard";
 import { ScanHistorySkeleton } from "@/components/history/ScanHistorySkeleton";
@@ -12,6 +12,8 @@ import {
   fetchPatientById,
   fetchPatientScans,
   fetchPatients,
+  patientComparePath,
+  patientTrendsPath,
   type PatientRecord,
 } from "@/lib/patients";
 import type { ScanRecord } from "@/lib/types";
@@ -122,11 +124,31 @@ export function DoctorPatientReportsView({
 
       {!isLoading && !error && scans.length > 0 && (
         <>
-          <p className="text-sm text-slate-600">
-            <span className="font-semibold text-slate-800">{scans.length}</span>{" "}
-            report{scans.length === 1 ? "" : "s"} for{" "}
-            <span className="font-semibold text-slate-800">{patientLabel}</span>
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-slate-600">
+              <span className="font-semibold text-slate-800">{scans.length}</span>{" "}
+              report{scans.length === 1 ? "" : "s"} for{" "}
+              <span className="font-semibold text-slate-800">{patientLabel}</span>
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <Link
+                href={patientTrendsPath(patientId)}
+                className="btn-secondary inline-flex items-center gap-2"
+              >
+                <LineChart className="h-4 w-4" aria-hidden />
+                AI Trends
+              </Link>
+              {scans.length >= 2 ? (
+                <Link
+                  href={patientComparePath(patientId)}
+                  className="btn-secondary inline-flex items-center gap-2"
+                >
+                  <GitCompareArrows className="h-4 w-4" aria-hidden />
+                  Compare Scans
+                </Link>
+              ) : null}
+            </div>
+          </div>
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             {scans.map((scan) => (
               <ScanHistoryCard key={scan.id} scan={scan} />

@@ -7,20 +7,22 @@ AI_SCREENING_DISCLAIMER = (
 )
 
 _FINDINGS_NORMAL = (
-    "AI analysis does not show obvious pneumonia-like opacity patterns in this chest X-ray."
+    "No pneumonia-like opacity pattern was identified on this chest X-ray screening. "
+    "Clinical correlation is recommended if symptoms are present."
 )
 
 _FINDINGS_PNEUMONIA: dict[SeverityLabel, str] = {
     "Mild": (
-        "AI analysis detected mild pneumonia-like opacity patterns. "
-        "Findings may require clinical correlation."
+        "Pattern may be consistent with early or mild pneumonia-like changes. "
+        "Clinical correlation is recommended."
     ),
     "Moderate": (
-        "AI analysis detected moderate pneumonia-like opacity patterns with noticeable "
-        "abnormal lung opacity."
+        "Pattern is consistent with possible bacterial pneumonia. "
+        "Clinical correlation is recommended."
     ),
     "Severe": (
-        "AI analysis detected strong pneumonia-like opacity patterns with high model confidence."
+        "Pattern strongly suggests significant pneumonia-like opacity. "
+        "Urgent clinical correlation is recommended."
     ),
 }
 

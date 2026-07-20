@@ -14,6 +14,12 @@ class PredictResponse(BaseModel):
         ...,
         description="AI severity score: None for Normal; Mild/Moderate/Severe for Pneumonia.",
     )
+    observed_regions: str = Field(
+        ...,
+        description=(
+            "Affected area block: lung side, lobe, and approximate infected region %."
+        ),
+    )
     ai_findings: str = Field(
         ...,
         description="Short clinical-style AI findings summary for this screening result.",
@@ -27,6 +33,14 @@ class PredictResponse(BaseModel):
     heatmap_path: str | None = Field(
         default=None,
         description="Grad-CAM overlay path, or null if disabled or generation failed.",
+    )
+    original_path: str | None = Field(
+        default=None,
+        description="Original uploaded DICOM path when source was DICOM; otherwise null.",
+    )
+    dicom_metadata: dict | None = Field(
+        default=None,
+        description="Key DICOM tags preserved from the source study, when applicable.",
     )
     model_version: str = Field(
         ...,

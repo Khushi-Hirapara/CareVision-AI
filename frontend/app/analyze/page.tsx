@@ -126,7 +126,7 @@ function AnalyzePageContent() {
   const analyzeHint = !hasPatient
     ? "Select an accepted patient to continue"
     : !hasImage
-      ? "Upload a valid PNG or JPEG to enable analysis"
+      ? "Upload a valid PNG, JPEG, or DICOM (.dcm) to enable analysis"
       : null;
 
   return (
@@ -139,6 +139,10 @@ function AnalyzePageContent() {
 
         <div className="mb-6">
           <MedicalDisclaimer compact />
+          <p className="mt-3 text-xs leading-relaxed text-slate-500">
+            Uploads are validated for brightness, sharpness, orientation, resolution, and
+            chest-X-ray suitability before the AI model runs.
+          </p>
         </div>
 
         <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
@@ -249,7 +253,14 @@ function AnalyzePageContent() {
             {isAnalyzing && <AnalysisLoadingState />}
 
             {!isAnalyzing && analyzeError && (
-              <ErrorAlert title="Analysis failed" message={analyzeError} />
+              <ErrorAlert
+                title={
+                  analyzeError.startsWith("Image quality check failed")
+                    ? "Image quality check failed"
+                    : "Analysis failed"
+                }
+                message={analyzeError}
+              />
             )}
 
             {!isAnalyzing && !analyzeError && result && previewUrl && (

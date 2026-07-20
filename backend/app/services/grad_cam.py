@@ -3,14 +3,22 @@
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 
 from app.core.config import Settings
 from app.services.ml_inference import get_classifier
+from app.services.observed_regions import localize_from_heatmap
 from model.grad_cam import GradCamConfig, GradCamGenerator
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class GradCamResult:
+    path: Path
+    region_hint: str
 
 
 @lru_cache
@@ -49,7 +57,7 @@ def generate_grad_cam_heatmap(
     image_path: Path,
     target_class: str,
     settings: Settings,
-) -> Path:
+) -> GradCamResult:
     """
     Generate a Grad-CAM overlay for the predicted class and save it under uploads/heatmaps/.
 
@@ -59,7 +67,7 @@ def generate_grad_cam_heatmap(
         settings: Application settings (model path, input size, upload dir).
 
     Returns:
-        Path to the saved overlay PNG.
+        GradCamResult with overlay path and localized region hint.
 
     Raises:
         Exception: Propagates failures from model load or overlay generation (logged first).
@@ -72,7 +80,9 @@ def generate_grad_cam_heatmap(
             settings.grad_cam_layer_name,
         )
         output_path = heatmap_output_path(image_path, settings)
-        return generator.save_overlay(image_path, target_class, output_path)
+        saved_path, heatmap = generator.save_overlay(image_path, target_class, output_path)
+        region_hint = localize_from_heatmap(heatmap)
+        return GradCamResult(path=saved_path, region_hint=region_hint)
     except Exception:
         logger.exception(
             "Grad-CAM overlay failed for %s (target_class=%s, layer=%s)",
@@ -87,7 +97,7 @@ def try_generate_grad_cam_heatmap(
     image_path: Path,
     target_class: str,
     settings: Settings,
-) -> Path | None:
+) -> GradCamResult | None:
     """
     Generate Grad-CAM when enabled; on failure log and return None so prediction can continue.
     """

@@ -3,21 +3,22 @@
 from app.schemas.predict import PredictionLabel, SeverityLabel
 
 _FOLLOW_UP_NORMAL = (
-    "Continue routine health monitoring. Consult a healthcare professional if symptoms persist."
+    "Continue routine health monitoring.\n"
+    "Consult a healthcare professional if symptoms persist."
 )
 
 _FOLLOW_UP_PNEUMONIA: dict[SeverityLabel, str] = {
     "Mild": (
-        "Consult a healthcare professional for clinical correlation. "
-        "Follow-up may be needed if symptoms continue."
+        "Consult a clinician for clinical correlation.\n"
+        "Consider repeat imaging if symptoms continue."
     ),
     "Moderate": (
-        "Medical consultation is recommended. A follow-up chest X-ray may be considered "
-        "based on doctor's advice."
+        "Consult radiologist.\n"
+        "Repeat X-ray after treatment."
     ),
     "Severe": (
-        "Urgent medical evaluation is recommended. Please consult a qualified healthcare "
-        "professional as soon as possible."
+        "Urgent medical evaluation is recommended.\n"
+        "Consult radiologist promptly."
     ),
 }
 

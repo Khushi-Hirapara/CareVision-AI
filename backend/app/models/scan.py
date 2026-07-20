@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import TYPE_CHECKING, List, Optional
 
-from sqlalchemy import DateTime, Float, ForeignKey, String, Text, func
+from sqlalchemy import JSON, DateTime, Float, ForeignKey, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -29,9 +29,16 @@ class Scan(Base):
     patient_name: Mapped[str] = mapped_column(String(255), nullable=False)
     image_path: Mapped[str] = mapped_column(String(512), nullable=False)
     heatmap_path: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
+    original_path: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
+    dicom_metadata: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     prediction: Mapped[str] = mapped_column(String(64), nullable=False)
     confidence: Mapped[float] = mapped_column(Float, nullable=False)
     severity: Mapped[str] = mapped_column(String(32), nullable=False, server_default="None")
+    observed_regions: Mapped[str] = mapped_column(
+        Text,
+        nullable=False,
+        server_default="No significant opacity regions identified",
+    )
     ai_findings: Mapped[str] = mapped_column(Text, nullable=False)
     follow_up_recommendation: Mapped[str] = mapped_column(Text, nullable=False)
     recommendation: Mapped[Optional[str]] = mapped_column(Text, nullable=True)

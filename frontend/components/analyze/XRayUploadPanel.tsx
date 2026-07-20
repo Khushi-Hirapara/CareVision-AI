@@ -1,10 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CloudUpload, FileImage, X } from "lucide-react";
+import { CloudUpload, FileImage, FileStack, X } from "lucide-react";
 import {
   ACCEPT_FILE_ATTRIBUTE,
   MAX_XRAY_SIZE_MB,
+  isDicomFile,
   validateXRayFile,
 } from "@/lib/validate-image";
 import { cn } from "@/lib/utils";
@@ -29,6 +30,7 @@ export function XRayUploadPanel({
   onError,
 }: XRayUploadPanelProps) {
   const [dragOver, setDragOver] = useState(false);
+  const [isDicom, setIsDicom] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const processFile = useCallback(
@@ -42,7 +44,11 @@ export function XRayUploadPanel({
       }
 
       onError(null);
-      onFileSelect(file, URL.createObjectURL(file));
+      const dicom = isDicomFile(file);
+      setIsDicom(dicom);
+      // Browsers cannot render .dcm; use a marker URL until analysis returns a PNG.
+      const preview = dicom ? "dicom:pending" : URL.createObjectURL(file);
+      onFileSelect(file, preview);
     },
     [onError, onFileSelect],
   );
@@ -64,6 +70,13 @@ export function XRayUploadPanel({
       }
     };
   }, [previewUrl]);
+
+  useEffect(() => {
+    if (!previewUrl) setIsDicom(false);
+  }, [previewUrl]);
+
+  const showDicomPlaceholder =
+    isDicom || previewUrl === "dicom:pending" || Boolean(fileName?.match(/\.dcm$/i));
 
   return (
     <div className="space-y-3">
@@ -88,7 +101,7 @@ export function XRayUploadPanel({
             Drag & drop chest X-ray
           </p>
           <p className="mt-1 text-xs text-slate-500">
-            PNG or JPEG only · max {MAX_XRAY_SIZE_MB} MB
+            PNG, JPEG, or DICOM (.dcm) · max {MAX_XRAY_SIZE_MB} MB
           </p>
           <button
             type="button"
@@ -114,8 +127,17 @@ export function XRayUploadPanel({
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-900/5 shadow-sm">
           <div className="flex items-center justify-between border-b border-slate-200 bg-white px-3 py-2 sm:px-4">
             <p className="flex items-center gap-2 truncate text-xs font-medium text-slate-600 sm:text-sm">
-              <FileImage className="h-4 w-4 shrink-0 text-teal-600" aria-hidden />
+              {showDicomPlaceholder ? (
+                <FileStack className="h-4 w-4 shrink-0 text-teal-600" aria-hidden />
+              ) : (
+                <FileImage className="h-4 w-4 shrink-0 text-teal-600" aria-hidden />
+              )}
               <span className="truncate">{fileName}</span>
+              {showDicomPlaceholder ? (
+                <span className="shrink-0 rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-teal-700 ring-1 ring-teal-100">
+                  DICOM
+                </span>
+              ) : null}
             </p>
             <button
               type="button"
@@ -128,12 +150,25 @@ export function XRayUploadPanel({
             </button>
           </div>
           <div className="relative aspect-[4/3] w-full bg-slate-100 sm:aspect-[5/4]">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={previewUrl}
-              alt="Uploaded chest X-ray preview"
-              className="h-full w-full object-contain"
-            />
+            {showDicomPlaceholder && !previewUrl.startsWith("blob:") && !previewUrl.startsWith("http") ? (
+              <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
+                <FileStack className="h-10 w-10 text-teal-600" aria-hidden />
+                <p className="text-sm font-semibold text-slate-800">
+                  DICOM study selected
+                </p>
+                <p className="max-w-sm text-xs leading-relaxed text-slate-500">
+                  Medical metadata will be preserved. A high-quality preview appears
+                  after analysis converts the study for AI screening.
+                </p>
+              </div>
+            ) : (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={previewUrl}
+                alt="Uploaded chest X-ray preview"
+                className="h-full w-full object-contain"
+              />
+            )}
           </div>
           <div className="border-t border-slate-200 bg-white px-3 py-2 sm:px-4">
             <button

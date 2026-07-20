@@ -1,27 +1,29 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import {
   ArrowLeft,
   Calendar,
   FileText,
+  GitCompareArrows,
   Hash,
   Layers,
+  LineChart,
   Cpu,
   ScanLine,
-  Stethoscope,
   User,
 } from "lucide-react";
-import type { ReactNode } from "react";
-import { AiFindingsSection } from "@/components/scans/AiFindingsSection";
-import { FollowUpRecommendationSection } from "@/components/scans/FollowUpRecommendationSection";
+import { AiAnalysisSummaryReport } from "@/components/scans/AiAnalysisSummaryReport";
+import { DicomMetadataPanel } from "@/components/scans/DicomMetadataPanel";
 import { ScanAiChatSection } from "@/components/scans/ScanAiChatSection";
 import { ScanNotesSection } from "@/components/scans/ScanNotesSection";
+import { ExplainabilityPanel } from "@/components/explainability/ExplainabilityPanel";
 import type { ScanRecord, UserRole } from "@/lib/types";
-import { formatDate, formatPercent, cn } from "@/lib/utils";
+import { formatDate, cn } from "@/lib/utils";
 import { DownloadReportButton } from "@/components/DownloadReportButton";
 import { PATIENT_DASHBOARD_PATH } from "@/lib/auth-routes";
 import { getMyScanReportUrl } from "@/lib/my-scans";
 import { getScanReportUrl } from "@/lib/api";
-import { PredictionBadge, SeverityBadge } from "@/components/ui/Badge";
+import { patientComparePath, patientTrendsPath } from "@/lib/patients";
 import { Card } from "@/components/ui/Card";
 import { StudyImage } from "@/components/ui/StudyImage";
 import { MedicalDisclaimer } from "@/components/ui/MedicalDisclaimer";
@@ -135,7 +137,6 @@ function ImagingPanel({
 export function ScanDetailView({ scan, userRole }: ScanDetailViewProps) {
   const isPatient = userRole === "patient";
   const isPneumonia = scan.prediction === "Pneumonia";
-  const confidencePct = Math.round(scan.confidence * 100);
   const backHref = isPatient ? PATIENT_DASHBOARD_PATH : "/history";
   const reportUrl = isPatient
     ? getMyScanReportUrl(scan.id)
@@ -149,12 +150,34 @@ export function ScanDetailView({ scan, userRole }: ScanDetailViewProps) {
           <ArrowLeft className="h-4 w-4" aria-hidden />
           {isPatient ? "Back to My Dashboard" : "Back to History"}
         </Link>
-        <DownloadReportButton
-          scanId={scan.id}
-          reportUrl={reportUrl}
-          label="Download PDF Report"
-          className="w-full sm:w-auto sm:items-end"
-        />
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+          {!isPatient && scan.patientId ? (
+            <>
+              <Link
+                href={patientTrendsPath(scan.patientId)}
+                className="btn-secondary inline-flex items-center justify-center gap-2"
+              >
+                <LineChart className="h-4 w-4" aria-hidden />
+                AI Trends
+              </Link>
+              <Link
+                href={patientComparePath(scan.patientId, {
+                  followUpId: scan.id,
+                })}
+                className="btn-secondary inline-flex items-center justify-center gap-2"
+              >
+                <GitCompareArrows className="h-4 w-4" aria-hidden />
+                Compare Scans
+              </Link>
+            </>
+          ) : null}
+          <DownloadReportButton
+            scanId={scan.id}
+            reportUrl={reportUrl}
+            label="Download PDF Report"
+            className="w-full sm:w-auto sm:items-end"
+          />
+        </div>
       </div>
 
       {/* Patient information */}
@@ -187,131 +210,52 @@ export function ScanDetailView({ scan, userRole }: ScanDetailViewProps) {
         </div>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-5">
-        {/* Prediction summary */}
+      <div className="grid gap-6 lg:grid-cols-5 xl:gap-7">
+        {/* AI Analysis Summary */}
         <div className="space-y-6 lg:col-span-2">
-          <Card
-            className={cn(
-              "overflow-hidden border-l-4 p-0",
-              isPneumonia ? "border-l-rose-500" : "border-l-emerald-500",
-            )}
-          >
-            <div className="p-5 sm:p-6">
-              <SectionHeader
-                icon={Stethoscope}
-                title="Prediction Summary"
-                description="AI-assisted screening result from the chest X-ray model"
-              />
+          <AiAnalysisSummaryReport
+            prediction={scan.prediction}
+            confidence={scan.confidence}
+            severity={scan.severity}
+            observedRegions={scan.observedRegions}
+            clinicalSuggestion={scan.aiFindings}
+            recommendedNextStep={scan.followUpRecommendation}
+          />
 
-              <div className="mt-5 space-y-5">
-                <div className="flex flex-wrap items-center gap-3">
-                  <PredictionBadge
-                    label={scan.prediction}
-                    className="px-3 py-1 text-sm"
-                  />
-                  <SeverityBadge severity={scan.severity} className="px-3 py-1 text-sm" />
-                  <span
-                    className={cn(
-                      "text-2xl font-bold tabular-nums",
-                      isPneumonia ? "text-rose-700" : "text-emerald-700",
-                    )}
-                  >
-                    {formatPercent(scan.confidence)}
-                  </span>
-                </div>
+          <DicomMetadataPanel
+            metadata={scan.dicomMetadata}
+            originalUrl={scan.originalPath}
+          />
 
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                    Prediction
-                  </p>
-                  <p
-                    className={cn(
-                      "mt-1 text-lg font-bold",
-                      isPneumonia ? "text-rose-800" : "text-emerald-800",
-                    )}
-                  >
-                    {scan.prediction}
-                  </p>
-                  <p className="mt-1 text-sm text-slate-600">
-                    {isPneumonia
-                      ? "Model suggests findings consistent with pneumonia on this chest radiograph."
-                      : "Model suggests no pneumonia pattern on this chest radiograph."}
-                  </p>
-                </div>
-
-                <InfoTile
-                  label="AI severity"
-                  value={scan.severity}
-                  icon={Stethoscope}
-                  highlight={scan.severity !== "None"}
+          {scan.recommendation ? (
+            <Card
+              className={cn(
+                "border-l-4 p-5",
+                isPneumonia ? "border-l-rose-500" : "border-l-emerald-500",
+              )}
+            >
+              <div className="mb-2 flex items-center gap-2">
+                <FileText
+                  className={cn(
+                    "h-4 w-4",
+                    isPneumonia ? "text-rose-600" : "text-emerald-600",
+                  )}
+                  aria-hidden
                 />
-
-                <AiFindingsSection findings={scan.aiFindings} />
-
-                <FollowUpRecommendationSection
-                  followUpRecommendation={scan.followUpRecommendation}
-                  variant={isPneumonia ? "pneumonia" : "normal"}
-                />
-
-                <div>
-                  <div className="mb-2 flex items-center justify-between text-xs">
-                    <span className="font-medium text-slate-500">Confidence</span>
-                    <span
-                      className={cn(
-                        "font-bold tabular-nums",
-                        isPneumonia ? "text-rose-700" : "text-emerald-700",
-                      )}
-                    >
-                      {confidencePct}%
-                    </span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-                    <div
-                      className={cn(
-                        "h-full rounded-full transition-all",
-                        isPneumonia
-                          ? "bg-gradient-to-r from-rose-400 to-rose-600"
-                          : "bg-gradient-to-r from-emerald-400 to-teal-600",
-                      )}
-                      style={{ width: `${confidencePct}%` }}
-                    />
-                  </div>
-                </div>
-
-                {scan.recommendation ? (
-                  <div
-                    className={cn(
-                      "rounded-xl border p-4",
-                      isPneumonia
-                        ? "border-rose-100 bg-rose-50/60"
-                        : "border-emerald-100 bg-emerald-50/60",
-                    )}
-                  >
-                    <div className="mb-2 flex items-center gap-2">
-                      <FileText
-                        className={cn(
-                          "h-4 w-4",
-                          isPneumonia ? "text-rose-600" : "text-emerald-600",
-                        )}
-                        aria-hidden
-                      />
-                      <p
-                        className={cn(
-                          "text-[11px] font-semibold uppercase tracking-wider",
-                          isPneumonia ? "text-rose-800" : "text-emerald-800",
-                        )}
-                      >
-                        Recommendation
-                      </p>
-                    </div>
-                    <p className="text-sm leading-relaxed text-slate-700">
-                      {scan.recommendation}
-                    </p>
-                  </div>
-                ) : null}
+                <p
+                  className={cn(
+                    "text-[11px] font-semibold uppercase tracking-wider",
+                    isPneumonia ? "text-rose-800" : "text-emerald-800",
+                  )}
+                >
+                  Screening Guidance
+                </p>
               </div>
-            </div>
-          </Card>
+              <p className="text-sm leading-relaxed text-slate-700 whitespace-pre-line">
+                {scan.recommendation}
+              </p>
+            </Card>
+          ) : null}
         </div>
 
         {/* Images */}
@@ -328,27 +272,36 @@ export function ScanDetailView({ scan, userRole }: ScanDetailViewProps) {
                 src={scan.imagePath}
                 alt={`Chest X-ray for ${scan.patientName}`}
               />
-              <ImagingPanel
-                title="Grad-CAM Heatmap"
-                src={scan.heatmapPath}
-                alt="Grad-CAM heatmap overlay"
-                empty={
-                  <div className="flex aspect-[4/5] flex-col items-center justify-center gap-3 bg-slate-50 p-6 text-center">
-                    <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
-                      <Layers className="h-7 w-7" aria-hidden />
-                    </span>
-                    <div>
-                      <p className="text-sm font-semibold text-slate-700">
-                        Heatmap not available
-                      </p>
-                      <p className="mt-1 max-w-[240px] text-xs leading-relaxed text-slate-500">
-                        Grad-CAM may be disabled or could not be generated for
-                        this scan.
-                      </p>
+              <div className="space-y-3">
+                <ImagingPanel
+                  title="Grad-CAM Heatmap"
+                  src={scan.heatmapPath}
+                  alt="Grad-CAM heatmap overlay highlighting suspicious regions"
+                  empty={
+                    <div className="flex aspect-[4/5] flex-col items-center justify-center gap-3 bg-slate-50 p-6 text-center">
+                      <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+                        <Layers className="h-7 w-7" aria-hidden />
+                      </span>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-700">
+                          Heatmap not available
+                        </p>
+                        <p className="mt-1 max-w-[240px] text-xs leading-relaxed text-slate-500">
+                          Grad-CAM may be disabled or could not be generated for
+                          this scan.
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                }
-              />
+                  }
+                />
+                {scan.heatmapPath && scan.observedRegions ? (
+                  <ExplainabilityPanel
+                    prediction={scan.prediction}
+                    observedRegions={scan.observedRegions}
+                    layout="grid"
+                  />
+                ) : null}
+              </div>
             </div>
             {scan.heatmapPath ? (
               <p className="mt-4 text-xs leading-relaxed text-slate-500">
@@ -370,3 +323,4 @@ export function ScanDetailView({ scan, userRole }: ScanDetailViewProps) {
     </div>
   );
 }
+

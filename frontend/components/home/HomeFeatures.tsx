@@ -12,7 +12,7 @@ const features = [
   {
     icon: Upload,
     title: "Frictionless intake",
-    text: "Drag-and-drop PNG or JPEG studies with optional patient labels-ready for batch research workflows.",
+    text: "Drag-and-drop PNG, JPEG, or DICOM (.dcm) studies with optional patient labels-ready for hospital workflows.",
     accent: "from-teal-500/10 to-cyan-500/5",
   },
   {

@@ -5,6 +5,9 @@ Run from backend/:
     uvicorn app.main:app --reload
 """
 
+# Must run before any TensorFlow import (routes → prediction → model).
+import app.core.tf_env  # noqa: F401
+
 import logging
 from contextlib import asynccontextmanager
 from typing import AsyncIterator

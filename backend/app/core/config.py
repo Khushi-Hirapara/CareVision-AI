@@ -74,12 +74,33 @@ class Settings(BaseSettings):
 
     # Uploads & reports
     upload_dir: str = Field(default="./backend/uploads", alias="UPLOAD_DIR")
-    max_upload_size_mb: int = Field(default=10, alias="MAX_UPLOAD_SIZE_MB")
+    max_upload_size_mb: int = Field(default=20, alias="MAX_UPLOAD_SIZE_MB")
     allowed_image_extensions: str = Field(
-        default="jpg,jpeg,png",
+        default="jpg,jpeg,png,dcm,dicom",
         alias="ALLOWED_IMAGE_EXTENSIONS",
     )
     reports_dir: str = Field(default="./backend/reports", alias="REPORTS_DIR")
+    report_logo_path: str | None = Field(
+        default=None,
+        alias="REPORT_LOGO_PATH",
+        description="Optional hospital logo image (PNG/JPG) for PDF letterhead.",
+    )
+    hospital_name: str = Field(
+        default="CareVision Medical Center",
+        alias="HOSPITAL_NAME",
+    )
+    hospital_department: str = Field(
+        default="Department of Radiology",
+        alias="HOSPITAL_DEPARTMENT",
+    )
+    hospital_address: str = Field(
+        default="123 Healthcare Drive, Medical City",
+        alias="HOSPITAL_ADDRESS",
+    )
+    hospital_phone: str = Field(
+        default="+1 (555) 123-4567",
+        alias="HOSPITAL_PHONE",
+    )
 
     # Model inference
     model_version: str = Field(
@@ -101,6 +122,16 @@ class Settings(BaseSettings):
         default=0.5,
         alias="MODEL_CONFIDENCE_THRESHOLD",
         description="Deprecated: use PREDICTION_THRESHOLD for inference decisions.",
+    )
+    enable_image_quality_check: bool = Field(
+        default=True,
+        alias="ENABLE_IMAGE_QUALITY_CHECK",
+        description="Run pre-inference image quality validation on uploads.",
+    )
+    min_image_dimension: int = Field(
+        default=224,
+        alias="MIN_IMAGE_DIMENSION",
+        description="Minimum width and height (px) required for screening.",
     )
     enable_grad_cam: bool = Field(default=True, alias="ENABLE_GRAD_CAM")
     grad_cam_layer_name: str | None = Field(
@@ -141,6 +172,16 @@ class Settings(BaseSettings):
         if not path.is_absolute():
             path = PROJECT_ROOT / path
         return path
+
+    @property
+    def resolved_report_logo_path(self) -> Path | None:
+        raw = (self.report_logo_path or "").strip()
+        if not raw:
+            return None
+        path = Path(raw)
+        if not path.is_absolute():
+            path = PROJECT_ROOT / path
+        return path if path.is_file() else None
 
     @property
     def resolved_model_path(self) -> Path:

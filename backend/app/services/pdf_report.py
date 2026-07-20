@@ -7,6 +7,7 @@ from io import BytesIO
 from pathlib import Path
 from xml.sax.saxutils import escape
 
+import qrcode
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_RIGHT
 from reportlab.lib.pagesizes import letter
@@ -15,6 +16,8 @@ from reportlab.lib.units import inch
 from reportlab.platypus import (
     HRFlowable,
     Image as RLImage,
+    KeepTogether,
+    PageBreak,
     Paragraph,
     SimpleDocTemplate,
     Spacer,
@@ -22,9 +25,10 @@ from reportlab.platypus import (
     TableStyle,
 )
 
-from app.core.config import PROJECT_ROOT
+from app.core.config import PROJECT_ROOT, Settings, settings
 from app.models.scan import Scan
 from app.models.scan_note import ScanNote
+from app.models.user import User
 from app.services.ai_findings import AI_SCREENING_DISCLAIMER
 from app.services.recommendations import MEDICAL_DISCLAIMER
 
@@ -87,6 +91,35 @@ def _confidence_tier(pct: float) -> str:
     if pct >= 60:
         return "Moderate"
     return "Low"
+
+
+def _confidence_interpretation(prediction: str, confidence_pct: float) -> tuple[str, str]:
+    """Return (headline, explanation) for model confidence (certainty, not severity)."""
+    tier = _confidence_tier(confidence_pct)
+    headline = f"{tier} Confidence" if tier != "Very high" else "Very High Confidence"
+    is_pneumonia = prediction.strip().lower() == "pneumonia"
+    if is_pneumonia:
+        if confidence_pct >= 75:
+            explanation = "The model strongly believes this image represents pneumonia."
+        elif confidence_pct >= 60:
+            explanation = "The model leans toward pneumonia, but with moderate certainty."
+        else:
+            explanation = (
+                "The model suggests pneumonia, but confidence is limited—"
+                "clinical review is especially important."
+            )
+    elif confidence_pct >= 75:
+        explanation = (
+            "The model strongly believes this image does not show a pneumonia pattern."
+        )
+    elif confidence_pct >= 60:
+        explanation = "The model leans toward a normal study, but with moderate certainty."
+    else:
+        explanation = (
+            "The model did not detect pneumonia with high certainty—"
+            "other pathology may still be present."
+        )
+    return headline, explanation
 
 
 def _scaled_image(path: Path, max_width: float, max_height: float) -> RLImage:
@@ -251,6 +284,23 @@ def _styles() -> dict[str, ParagraphStyle]:
             leading=10,
             textColor=_SLATE_500,
         ),
+        "logo_monogram": ParagraphStyle(
+            "LogoMonogram",
+            parent=base["Normal"],
+            fontName="Helvetica-Bold",
+            fontSize=16,
+            leading=18,
+            textColor=_WHITE,
+            alignment=TA_CENTER,
+        ),
+        "panel_header": ParagraphStyle(
+            "PanelHeader",
+            parent=base["Normal"],
+            fontName="Helvetica-Bold",
+            fontSize=8,
+            leading=10,
+            textColor=_TEAL_HEADER,
+        ),
     }
 
 
@@ -258,36 +308,226 @@ def _letterhead(
     scan_id: int,
     generated_at: datetime,
     styles: dict[str, ParagraphStyle],
+    cfg: Settings,
 ) -> Table:
     report_no = _report_number(scan_id)
-    left = [
-        Paragraph("CareVision AI", styles["letterhead_title"]),
-        Paragraph(
-            "Chest X-Ray · AI-Assisted Screening Report",
-            styles["letterhead_sub"],
-        ),
+    logo_cell = _logo_cell(cfg, styles)
+
+    hospital_block = [
+        Paragraph(escape(cfg.hospital_name), styles["letterhead_title"]),
+        Paragraph(escape(cfg.hospital_department), styles["letterhead_sub"]),
+        Paragraph(escape(cfg.hospital_address), styles["letterhead_sub"]),
+        Paragraph(f"Tel: {escape(cfg.hospital_phone)}", styles["letterhead_sub"]),
     ]
-    right = Paragraph(
+    meta = Paragraph(
+        f"<b>RADIOLOGY REPORT</b><br/>"
         f"<b>Report No.</b> {report_no}<br/>"
         f"<b>Issued</b> {_format_date(generated_at)}<br/>"
         f"<b>Time</b> {generated_at.strftime('%I:%M %p')}",
         styles["letterhead_meta"],
     )
-    band = Table([[left, right]], colWidths=[4.1 * inch, 2.4 * inch])
+
+    band = Table([[logo_cell, hospital_block, meta]], colWidths=[1.05 * inch, 3.35 * inch, 2.1 * inch])
     band.setStyle(
         TableStyle(
             [
                 ("BACKGROUND", (0, 0), (-1, -1), _TEAL_HEADER),
                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                ("LEFTPADDING", (0, 0), (0, 0), 16),
-                ("RIGHTPADDING", (1, 0), (1, 0), 16),
+                ("LEFTPADDING", (0, 0), (0, 0), 14),
+                ("LEFTPADDING", (1, 0), (1, 0), 8),
+                ("RIGHTPADDING", (2, 0), (2, 0), 14),
                 ("TOPPADDING", (0, 0), (-1, -1), 14),
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 14),
-                ("ALIGN", (1, 0), (1, 0), "RIGHT"),
+                ("ALIGN", (2, 0), (2, 0), "RIGHT"),
             ]
         )
     )
     return band
+
+
+def _logo_cell(cfg: Settings, styles: dict[str, ParagraphStyle]):
+    logo_path = cfg.resolved_report_logo_path
+    if logo_path:
+        try:
+            logo = RLImage(str(logo_path))
+            max_side = 0.72 * inch
+            ratio = min(max_side / logo.drawWidth, max_side / logo.drawHeight, 1.0)
+            logo.drawWidth *= ratio
+            logo.drawHeight *= ratio
+            logo.hAlign = "CENTER"
+            return logo
+        except Exception:
+            pass
+
+    monogram = Table(
+        [[Paragraph("CV", styles["logo_monogram"])]],
+        colWidths=[0.62 * inch],
+        rowHeights=[0.62 * inch],
+    )
+    monogram.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#0f766e")),
+                ("BOX", (0, 0), (-1, -1), 1, colors.HexColor("#99f6e4")),
+                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ]
+        )
+    )
+    return monogram
+
+
+def _patient_physician_panel(
+    scan: Scan,
+    generated_at: datetime,
+    styles: dict[str, ParagraphStyle],
+) -> Table:
+    doctor = getattr(scan, "user", None)
+    doctor_name = doctor.name if isinstance(doctor, User) else "Referring physician not recorded"
+    doctor_email = doctor.email if isinstance(doctor, User) else "—"
+    doctor_role = "Attending Radiologist" if getattr(doctor, "role", "") == "doctor" else "Clinician"
+
+    patient_rows = [
+        ("Patient name", scan.patient_name),
+        ("Study ID", str(scan.id)),
+        ("Study date", _format_datetime(scan.created_at)),
+        ("Modality", "Chest X-Ray (PA)"),
+    ]
+    physician_rows = [
+        ("Referring physician", doctor_name),
+        ("Department", doctor_role),
+        ("Contact", doctor_email),
+        ("Report issued", _format_datetime(generated_at)),
+    ]
+
+    patient_table = _mini_info_table("Patient Information", patient_rows, styles)
+    physician_table = _mini_info_table("Physician / Referrer", physician_rows, styles)
+    panel = Table([[patient_table, physician_table]], colWidths=[3.15 * inch, 3.15 * inch])
+    panel.setStyle(
+        TableStyle(
+            [
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("TOPPADDING", (0, 0), (-1, -1), 0),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+            ]
+        )
+    )
+    return panel
+
+
+def _mini_info_table(
+    title: str,
+    rows: list[tuple[str, str]],
+    styles: dict[str, ParagraphStyle],
+) -> Table:
+    header = Paragraph(title.upper(), styles["panel_header"])
+    body_rows: list[list[Paragraph]] = [[header]]
+    for label, value in rows:
+        body_rows.append(
+            [
+                Paragraph(
+                    f'<font size="7" color="#64748b">{escape(label.upper())}</font><br/>'
+                    f"<b>{escape(value)}</b>",
+                    styles["field_value"],
+                )
+            ]
+        )
+    table = Table(body_rows, colWidths=[3.05 * inch])
+    table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), _SLATE_50),
+                ("BOX", (0, 0), (-1, -1), 0.5, _SLATE_200),
+                ("LEFTPADDING", (0, 0), (-1, -1), 10),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+                ("TOPPADDING", (0, 0), (0, 0), 8),
+                ("BOTTOMPADDING", (0, 0), (0, 0), 6),
+                ("TOPPADDING", (0, 1), (-1, -1), 6),
+                ("BOTTOMPADDING", (0, -1), (-1, -1), 8),
+                ("LINEBELOW", (0, 0), (-1, 0), 0.5, _SLATE_200),
+            ]
+        )
+    )
+    return table
+
+
+def _online_report_url(scan_id: int, cfg: Settings) -> str:
+    base = cfg.frontend_url.rstrip("/")
+    return f"{base}/scans/{scan_id}"
+
+
+def _qr_code_image(url: str, size: float = 0.95 * inch) -> RLImage:
+    qr = qrcode.QRCode(version=1, box_size=8, border=2)
+    qr.add_data(url)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+    buffer = BytesIO()
+    img.save(buffer, format="PNG")
+    buffer.seek(0)
+    return RLImage(buffer, width=size, height=size)
+
+
+def _online_report_footer(
+    scan_id: int,
+    cfg: Settings,
+    styles: dict[str, ParagraphStyle],
+) -> Table:
+    url = _online_report_url(scan_id, cfg)
+    qr = _qr_code_image(url)
+    text = Paragraph(
+        f'<b>Online Report Access</b><br/><br/>'
+        f"Scan the QR code to open this study in CareVision AI.<br/>"
+        f'<font size="8" color="#475569">{escape(url)}</font><br/><br/>'
+        f"<i>Sign-in required. For authorized clinical and patient use only.</i>",
+        styles["body"],
+    )
+    panel = Table([[qr, text]], colWidths=[1.15 * inch, _CONTENT_WIDTH - 1.15 * inch])
+    panel.setStyle(
+        TableStyle(
+            [
+                ("BOX", (0, 0), (-1, -1), 0.5, _SLATE_200),
+                ("BACKGROUND", (0, 0), (-1, -1), _SLATE_50),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("LEFTPADDING", (0, 0), (0, 0), 12),
+                ("LEFTPADDING", (1, 0), (1, 0), 10),
+                ("RIGHTPADDING", (1, 0), (1, 0), 12),
+                ("TOPPADDING", (0, 0), (-1, -1), 10),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 10),
+            ]
+        )
+    )
+    return panel
+
+
+def _clinical_recommendation_panel(
+    recommendation_html: str,
+    follow_up: str,
+    styles: dict[str, ParagraphStyle],
+) -> Table:
+    follow_html = escape(follow_up).replace("\n", "<br/>")
+    content = Paragraph(
+        f'<font name="Helvetica-Bold" size="10" color="#991b1b">Clinical Recommendation</font>'
+        f"<br/><br/>{recommendation_html}<br/><br/>"
+        f'<font name="Helvetica-Bold" size="9" color="#334155">Recommended Next Step</font>'
+        f"<br/>{follow_html}",
+        styles["body"],
+    )
+    table = Table([[content]], colWidths=[_CONTENT_WIDTH])
+    table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#fff1f2")),
+                ("BOX", (0, 0), (-1, -1), 0.75, colors.HexColor("#fecdd3")),
+                ("LEFTPADDING", (0, 0), (-1, -1), 14),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 14),
+                ("TOPPADDING", (0, 0), (-1, -1), 12),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 12),
+            ]
+        )
+    )
+    return table
 
 
 def _confidential_strip(styles: dict[str, ParagraphStyle]) -> Table:
@@ -342,11 +582,31 @@ def _meta_strip(
 
 
 def _section_title(title: str, styles: dict[str, ParagraphStyle]) -> list:
+    """Hospital-style section header: rule, teal title, rule (matches report screenshots)."""
     return [
-        Spacer(1, 0.1 * inch),
+        Spacer(1, 0.12 * inch),
+        HRFlowable(
+            width="100%",
+            thickness=0.6,
+            color=_SLATE_200,
+            spaceBefore=0,
+            spaceAfter=6,
+        ),
         Paragraph(title.upper(), styles["section_title"]),
-        HRFlowable(width="100%", thickness=0.5, color=_SLATE_200, spaceAfter=6),
+        HRFlowable(
+            width="100%",
+            thickness=0.6,
+            color=_SLATE_200,
+            spaceBefore=4,
+            spaceAfter=10,
+        ),
     ]
+
+
+def _section_block(title: str, styles: dict[str, ParagraphStyle], *body) -> KeepTogether:
+    """Keep section title and its content on the same page (no orphaned headings)."""
+    flowables: list = [*_section_title(title, styles), *body]
+    return KeepTogether(flowables)
 
 
 def _info_grid(rows: list[tuple[str, str]], styles: dict[str, ParagraphStyle]) -> Table:
@@ -517,6 +777,124 @@ def _diagnostic_summary_table(
     return table
 
 
+def _structured_ai_analysis_summary(
+    prediction: str,
+    confidence_pct: float,
+    observed_regions: str,
+    severity: str,
+    clinical_suggestion: str,
+    next_step: str,
+    styles: dict[str, ParagraphStyle],
+) -> Table:
+    """Professional labeled AI Analysis Summary block for PDF reports."""
+    is_pneumonia = prediction.strip().lower() == "pneumonia"
+    finding_fg = _PNEUMONIA_TEXT if is_pneumonia else _NORMAL_TEXT
+    finding_bg = _PNEUMONIA_BG if is_pneumonia else _NORMAL_BG
+    sev_label = severity.strip() or "None"
+    if sev_label.lower() == "none":
+        sev_display = "None"
+        sev_bg, sev_fg = _SLATE_50, _SLATE_600
+    else:
+        sev_display = sev_label
+        sev_bg, sev_fg, _ = _severity_colors(sev_label)
+
+    label_style = ParagraphStyle(
+        "AiSumLabel",
+        fontName="Helvetica-Bold",
+        fontSize=8,
+        leading=10,
+        textColor=_SLATE_600,
+        spaceBefore=0,
+        spaceAfter=2,
+    )
+    value_style = ParagraphStyle(
+        "AiSumValue",
+        fontName="Helvetica",
+        fontSize=10,
+        leading=13,
+        textColor=_SLATE_900,
+        spaceAfter=8,
+    )
+    prediction_style = ParagraphStyle(
+        "AiSumPrediction",
+        fontName="Helvetica-Bold",
+        fontSize=20,
+        leading=24,
+        textColor=finding_fg,
+        spaceAfter=0,
+    )
+    confidence_style = ParagraphStyle(
+        "AiSumConf",
+        fontName="Helvetica-Bold",
+        fontSize=14,
+        leading=17,
+        textColor=_SLATE_900,
+        spaceAfter=8,
+    )
+
+    suggestion = escape(clinical_suggestion).replace("\n", "<br/>")
+    next_step_html = escape(next_step).replace("\n", "<br/>")
+    conf_headline, conf_explanation = _confidence_interpretation(prediction, confidence_pct)
+    conf_note = (
+        "This score reflects the model's certainty in its classification, "
+        "not the severity of disease."
+    )
+
+    rows = [
+        [Paragraph(escape(prediction.strip().title()), prediction_style)],
+        [Paragraph("CONFIDENCE", label_style)],
+        [Paragraph(f"{confidence_pct}%", confidence_style)],
+        [
+            Paragraph(
+                f"<b>{escape(conf_headline)}</b><br/>{escape(conf_explanation)}<br/>"
+                f"<font size='8' color='#64748b'>{escape(conf_note)}</font>",
+                value_style,
+            )
+        ],
+        [Paragraph("AFFECTED AREA", label_style)],
+        [Paragraph(escape(observed_regions).replace("\n", "<br/>"), value_style)],
+        [Paragraph("SEVERITY", label_style)],
+        [
+            Paragraph(
+                escape(sev_display),
+                ParagraphStyle(
+                    "AiSumSev",
+                    fontName="Helvetica-Bold",
+                    fontSize=11,
+                    leading=14,
+                    textColor=sev_fg,
+                    spaceAfter=8,
+                ),
+            )
+        ],
+        [Paragraph("CLINICAL SUGGESTION", label_style)],
+        [Paragraph(suggestion, value_style)],
+        [Paragraph("RECOMMENDED NEXT STEP", label_style)],
+        [Paragraph(next_step_html, value_style)],
+    ]
+
+    table = Table(rows, colWidths=[_CONTENT_WIDTH])
+    table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (0, 0), finding_bg),
+                ("BACKGROUND", (0, 1), (-1, -1), _WHITE),
+                ("BACKGROUND", (0, 7), (0, 7), sev_bg),
+                ("BOX", (0, 0), (-1, -1), 0.75, _SLATE_200),
+                ("LINEBELOW", (0, 0), (0, 0), 0.5, _SLATE_200),
+                ("LEFTPADDING", (0, 0), (-1, -1), 14),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 14),
+                ("TOPPADDING", (0, 0), (0, 0), 16),
+                ("BOTTOMPADDING", (0, 0), (0, 0), 16),
+                ("TOPPADDING", (0, 1), (-1, -1), 8),
+                ("BOTTOMPADDING", (0, -1), (0, -1), 12),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ]
+        )
+    )
+    return table
+
+
 def _clinical_impression(
     prediction: str,
     confidence_pct: float,
@@ -681,8 +1059,7 @@ def _build_imaging_section(
         )
     )
     return [
-        *_section_title("Radiology Images", styles),
-        grid,
+        _section_block("Radiology Images", styles, grid),
     ]
 
 
@@ -718,8 +1095,7 @@ def _build_doctor_notes_section(
         )
     )
     return [
-        *_section_title("Physician Notes", styles),
-        table,
+        _section_block("Physician Notes", styles, table),
     ]
 
 
@@ -747,9 +1123,10 @@ def _signature_block(styles: dict[str, ParagraphStyle]) -> Table:
     return outer
 
 
-def _make_page_callbacks(scan_id: int, patient_name: str):
+def _make_page_callbacks(scan_id: int, patient_name: str, hospital_name: str):
     report_no = _report_number(scan_id)
     patient_safe = patient_name[:40]
+    org = hospital_name[:48]
 
     def _draw_page(canvas, doc) -> None:
         canvas.saveState()
@@ -764,7 +1141,7 @@ def _make_page_callbacks(scan_id: int, patient_name: str):
             canvas.drawString(
                 0.75 * inch,
                 y_top + 0.08 * inch,
-                f"CareVision AI · Report {report_no} · {patient_safe}",
+                f"{org} · Report {report_no} · {patient_safe}",
             )
 
         footer_y = 0.55 * inch
@@ -788,7 +1165,7 @@ def _make_page_callbacks(scan_id: int, patient_name: str):
         canvas.drawCentredString(
             _PAGE_WIDTH / 2,
             footer_y - 0.08 * inch,
-            f"CareVision AI · {report_no}",
+            f"{org} · {report_no}",
         )
         canvas.setFont("Helvetica", 7)
         canvas.setFillColor(_SLATE_500)
@@ -806,8 +1183,10 @@ def generate_scan_report_pdf(
     scan: Scan,
     *,
     notes: list[ScanNote] | None = None,
+    cfg: Settings | None = None,
 ) -> bytes:
     """Build a PDF report from saved scan data (no model re-inference)."""
+    report_cfg = cfg or settings
     buffer = BytesIO()
     generated_at = datetime.now()
 
@@ -824,6 +1203,10 @@ def generate_scan_report_pdf(
     styles = _styles()
     confidence_pct = round(scan.confidence * 100, 1)
     severity_display = scan.severity or "None"
+    observed_regions = (
+        getattr(scan, "observed_regions", None)
+        or "Observed regions not recorded for this scan."
+    )
     ai_findings = scan.ai_findings or "AI findings not recorded for this scan."
     follow_up = (
         scan.follow_up_recommendation
@@ -842,10 +1225,10 @@ def generate_scan_report_pdf(
         heatmap_path = None
 
     report_notes = notes or []
-    page_cb = _make_page_callbacks(scan.id, scan.patient_name)
+    page_cb = _make_page_callbacks(scan.id, scan.patient_name, report_cfg.hospital_name)
 
     story: list = [
-        _letterhead(scan.id, generated_at, styles),
+        _letterhead(scan.id, generated_at, styles, report_cfg),
         Spacer(1, 0.08 * inch),
         _confidential_strip(styles),
         Spacer(1, 0.1 * inch),
@@ -854,61 +1237,101 @@ def generate_scan_report_pdf(
                 ("Patient", scan.patient_name),
                 ("Study ID", str(scan.id)),
                 ("Study Date", _format_date(scan.created_at)),
-                ("Modality", "Chest X-Ray (PA)"),
+                ("Prediction", scan.prediction),
             ],
             styles,
         ),
         Spacer(1, 0.12 * inch),
-        *_section_title("Patient & Study Record", styles),
-        _info_grid(
-            [
-                ("Patient name", scan.patient_name),
-                ("Internal study ID", str(scan.id)),
-                ("Date of study", _format_datetime(scan.created_at)),
-                ("Report issued", _format_datetime(generated_at)),
-            ],
-            styles,
-        ),
-        Spacer(1, 0.06 * inch),
-        *_section_title("AI Diagnostic Summary", styles),
-        _diagnostic_summary_table(
-            scan.prediction,
-            confidence_pct,
-            severity_display,
-            model_version,
-            styles,
-        ),
-        Spacer(1, 0.08 * inch),
-        _clinical_impression(scan.prediction, confidence_pct, severity_display, styles),
-        Spacer(1, 0.1 * inch),
-        *_section_title("AI Findings Narrative", styles),
-        _body_box(escape(ai_findings), styles),
+        _patient_physician_panel(scan, generated_at, styles),
     ]
 
+    # —— Page 1: study identity + radiology images ————————————————
     imaging = _build_imaging_section(xray_path, heatmap_path, styles)
     if imaging:
-        story.append(Spacer(1, 0.06 * inch))
+        story.append(Spacer(1, 0.12 * inch))
         story.extend(imaging)
+
+    dicom_meta = getattr(scan, "dicom_metadata", None) or {}
+    if isinstance(dicom_meta, dict) and dicom_meta:
+        modality = dicom_meta.get("modality") or "—"
+        study_date = dicom_meta.get("study_date") or "—"
+        matrix = "—"
+        if dicom_meta.get("rows") and dicom_meta.get("columns"):
+            matrix = f"{dicom_meta.get('rows')} × {dicom_meta.get('columns')}"
+        story.append(
+            _section_block(
+                "DICOM Study Metadata",
+                styles,
+                _info_grid(
+                    [
+                        ("Source format", str(dicom_meta.get("source_format") or "DICOM")),
+                        ("Modality", str(modality)),
+                        ("DICOM study date", str(study_date)),
+                        ("Body part", str(dicom_meta.get("body_part_examined") or "—")),
+                        ("Matrix", matrix),
+                        ("Institution", str(dicom_meta.get("institution_name") or "—")),
+                    ],
+                    styles,
+                ),
+            )
+        )
+
+    # —— Page 2: AI Analysis Summary (title + body kept together) ——
+    story.append(PageBreak())
+    story.append(
+        _section_block(
+            "AI Analysis Summary",
+            styles,
+            _structured_ai_analysis_summary(
+                scan.prediction,
+                confidence_pct,
+                observed_regions,
+                severity_display,
+                ai_findings,
+                follow_up,
+                styles,
+            ),
+            Spacer(1, 0.1 * inch),
+            _clinical_impression(scan.prediction, confidence_pct, severity_display, styles),
+            Spacer(1, 0.08 * inch),
+            Paragraph(
+                f"<b>Analysis model:</b> {escape(model_version)}",
+                styles["body"],
+            ),
+        )
+    )
+
+    # —— Page 3: recommendations, notices (each title stays with content) —
+    story.append(PageBreak())
+    story.append(
+        _section_block(
+            "Clinical Recommendations",
+            styles,
+            _clinical_recommendation_panel(rec_display, follow_up, styles),
+        )
+    )
 
     notes_block = _build_doctor_notes_section(report_notes, styles)
     if notes_block:
-        story.append(Spacer(1, 0.06 * inch))
         story.extend(notes_block)
 
     story.extend(
         [
-            Spacer(1, 0.06 * inch),
-            *_section_title("Follow-Up Care Plan", styles),
-            _body_box(escape(follow_up), styles),
-            *_section_title("Clinical Recommendations", styles),
-            _body_box(rec_display, styles),
-            *_section_title("Important Notices", styles),
-            _disclaimer_box(
-                "Medical disclaimer",
-                f"{MEDICAL_DISCLAIMER} {AI_SCREENING_DISCLAIMER}",
+            _section_block(
+                "Online Report Access",
                 styles,
+                _online_report_footer(scan.id, report_cfg, styles),
             ),
-            Spacer(1, 0.14 * inch),
+            _section_block(
+                "Important Notices",
+                styles,
+                _disclaimer_box(
+                    "Medical disclaimer",
+                    f"{MEDICAL_DISCLAIMER} {AI_SCREENING_DISCLAIMER}",
+                    styles,
+                ),
+            ),
+            Spacer(1, 0.2 * inch),
             _signature_block(styles),
         ]
     )

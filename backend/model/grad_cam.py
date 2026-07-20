@@ -296,8 +296,13 @@ class GradCamGenerator:
         self,
         image_path: Path,
         target_class: str,
-    ) -> np.ndarray:
-        """Build an RGB overlay (uint8) of the heatmap on the original X-ray."""
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Build an RGB overlay (uint8) of the heatmap on the original X-ray.
+
+        Returns:
+            (overlay_rgb, heatmap) where heatmap is normalized in [0, 1].
+        """
         original = Image.open(image_path).convert("RGB")
         original_size = original.size
 
@@ -313,16 +318,17 @@ class GradCamGenerator:
         original_rgb = np.asarray(original, dtype=np.float32)
         alpha = self.config.overlay_alpha
         blended = (1.0 - alpha) * original_rgb + alpha * heatmap_rgb.astype(np.float32)
-        return np.clip(blended, 0, 255).astype(np.uint8)
+        return np.clip(blended, 0, 255).astype(np.uint8), heatmap
 
     def save_overlay(
         self,
         image_path: Path,
         target_class: str,
         output_path: Path,
-    ) -> Path:
+    ) -> tuple[Path, np.ndarray]:
+        """Save Grad-CAM overlay and return (output_path, raw heatmap)."""
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        overlay = self.generate_overlay(image_path, target_class)
+        overlay, heatmap = self.generate_overlay(image_path, target_class)
         Image.fromarray(overlay).save(output_path, format="PNG")
         logger.info(
             "Grad-CAM: saved overlay for %s (class=%s) -> %s",
@@ -330,4 +336,4 @@ class GradCamGenerator:
             target_class,
             output_path,
         )
-        return output_path
+        return output_path, heatmap

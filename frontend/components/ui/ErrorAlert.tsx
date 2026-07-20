@@ -24,7 +24,7 @@ export function ErrorAlert({
       <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-rose-500" aria-hidden />
       <div>
         <p className="font-semibold">{title}</p>
-        <p className="mt-1 leading-relaxed text-rose-800">{message}</p>
+        <p className="mt-1 whitespace-pre-line leading-relaxed text-rose-800">{message}</p>
       </div>
     </div>
   );

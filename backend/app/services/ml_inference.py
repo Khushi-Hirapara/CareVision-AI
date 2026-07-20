@@ -7,6 +7,7 @@ import sys
 from functools import lru_cache
 from pathlib import Path
 
+import app.core.tf_env  # noqa: F401 — quiet TF before model import
 from app.core.config import Settings
 
 # Allow `from model.inference import ...` when running uvicorn from backend/
