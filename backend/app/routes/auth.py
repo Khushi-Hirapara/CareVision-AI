@@ -5,9 +5,9 @@ from app.core.deps import get_current_user
 from app.core.security import create_access_token
 from app.database import get_db
 from app.models.user import User
-from app.schemas.auth import LoginRequest, Token
-from app.schemas.user import UserCreate, UserResponse
-from app.services.user import authenticate_user, create_user, get_user_by_email
+from app.schemas.auth import LoginRequest, RegisterRequest, Token
+from app.schemas.user import UserResponse
+from app.services.user import authenticate_user, create_doctor_user, get_user_by_email
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -18,17 +18,22 @@ router = APIRouter(prefix="/auth", tags=["auth"])
     status_code=status.HTTP_201_CREATED,
 )
 def register(
-    body: UserCreate,
+    body: RegisterRequest,
     db: Session = Depends(get_db),
 ) -> UserResponse:
-    """Register a new user with a unique email and bcrypt-hashed password."""
+    """Register a new doctor account (public signup never creates patients)."""
     if get_user_by_email(db, body.email) is not None:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="A user with this email already exists.",
         )
 
-    user = create_user(db, body)
+    user = create_doctor_user(
+        db,
+        name=body.name,
+        email=str(body.email),
+        password=body.password,
+    )
     return UserResponse.model_validate(user)
 
 
@@ -47,7 +52,11 @@ def login(
         )
 
     access_token = create_access_token(subject=user.id)
-    return Token(access_token=access_token, token_type="bearer")
+    return Token(
+        access_token=access_token,
+        token_type="bearer",
+        user=UserResponse.model_validate(user),
+    )
 
 
 @router.get("/me", response_model=UserResponse)

@@ -11,6 +11,7 @@ import {
 import { GuestOnly } from "@/components/auth/GuestOnly";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { AuthApiError } from "@/lib/auth";
+import { DOCTOR_DASHBOARD_PATH } from "@/lib/auth-routes";
 import { ErrorAlert } from "@/components/ui/ErrorAlert";
 
 function RegisterForm() {
@@ -29,7 +30,7 @@ function RegisterForm() {
 
     try {
       await register(name.trim(), email.trim(), password);
-      router.replace("/analyze");
+      router.replace(DOCTOR_DASHBOARD_PATH);
     } catch (err) {
       setError(
         err instanceof AuthApiError
@@ -44,7 +45,7 @@ function RegisterForm() {
   return (
     <AuthFormCard
       title="Create account"
-      description="Register to analyze X-rays and save scans to your private history."
+      description="Create a doctor account to manage patients, analyze X-rays, and save clinical scan history. Patient accounts are created by your care team."
       footer={
         <AuthFooterLink
           prompt="Already have an account?"

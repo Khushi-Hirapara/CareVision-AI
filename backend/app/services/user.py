@@ -2,6 +2,7 @@
 
 from sqlalchemy.orm import Session
 
+from app.core.roles import DOCTOR
 from app.core.security import get_password_hash, verify_password
 from app.models.user import User
 from app.schemas.user import UserCreate
@@ -23,11 +24,26 @@ def create_user(db: Session, user_in: UserCreate) -> User:
         name=user_in.name,
         email=user_in.email,
         hashed_password=get_password_hash(user_in.password),
+        role=user_in.role,
     )
     db.add(user)
     db.commit()
     db.refresh(user)
     return user
+
+
+def create_doctor_user(
+    db: Session,
+    *,
+    name: str,
+    email: str,
+    password: str,
+) -> User:
+    """Create a doctor account for public registration."""
+    return create_user(
+        db,
+        UserCreate(name=name, email=email, password=password, role=DOCTOR),
+    )
 
 
 def authenticate_user(db: Session, email: str, password: str) -> User | None:
@@ -47,6 +63,7 @@ def get_or_create_default_user(db: Session) -> User:
         name=DEMO_USER_NAME,
         email=DEMO_USER_EMAIL,
         hashed_password=get_password_hash("demo-password-not-for-production"),
+        role=DOCTOR,
     )
     db.add(user)
     db.commit()

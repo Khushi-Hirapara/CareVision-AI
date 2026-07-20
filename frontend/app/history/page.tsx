@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { History, SearchX } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { ScanHistoryCard } from "@/components/ScanHistoryCard";
@@ -13,6 +14,7 @@ import { ScanHistorySkeleton } from "@/components/history/ScanHistorySkeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorAlert } from "@/components/ui/ErrorAlert";
 import { fetchScans } from "@/lib/api";
+import { patientReportsPath } from "@/lib/patients";
 import type { ScanRecord } from "@/lib/types";
 
 function filterScans(
@@ -33,6 +35,16 @@ function filterScans(
 }
 
 export default function HistoryPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const patientIdParam = searchParams.get("patientId");
+  const filterPatientId =
+    patientIdParam != null
+      ? Number.parseInt(patientIdParam, 10)
+      : Number.NaN;
+  const hasPatientFilter =
+    Number.isFinite(filterPatientId) && filterPatientId >= 1;
+
   const [scans, setScans] = useState<ScanRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -41,6 +53,14 @@ export default function HistoryPage() {
     useState<PredictionFilter>("all");
 
   useEffect(() => {
+    if (hasPatientFilter) {
+      router.replace(patientReportsPath(filterPatientId));
+    }
+  }, [hasPatientFilter, filterPatientId, router]);
+
+  useEffect(() => {
+    if (hasPatientFilter) return;
+
     let cancelled = false;
 
     async function load() {
@@ -66,7 +86,7 @@ export default function HistoryPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [hasPatientFilter]);
 
   const filteredScans = useMemo(
     () => filterScans(scans, searchQuery, predictionFilter),
@@ -78,6 +98,16 @@ export default function HistoryPage() {
 
   const pneumoniaCount = scans.filter((s) => s.prediction === "Pneumonia").length;
   const normalCount = scans.length - pneumoniaCount;
+
+  if (hasPatientFilter) {
+    return (
+      <div className="page-shell">
+        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:py-12">
+          <p className="text-sm text-slate-600">Opening patient reports…</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="page-shell">

@@ -82,6 +82,11 @@ class Settings(BaseSettings):
     reports_dir: str = Field(default="./backend/reports", alias="REPORTS_DIR")
 
     # Model inference
+    model_version: str = Field(
+        default="v1.0-efficientnetb0",
+        alias="MODEL_VERSION",
+        description="Label stored on each scan for audit and reporting.",
+    )
     model_path: str = Field(
         default="./backend/model/chest_xray_model.h5",
         alias="MODEL_PATH",
@@ -143,6 +148,45 @@ class Settings(BaseSettings):
         if not path.is_absolute():
             path = PROJECT_ROOT / path
         return path
+
+    # Frontend & patient invitations
+    frontend_url: str = Field(
+        default="http://localhost:3000",
+        alias="FRONTEND_URL",
+    )
+    invitation_expire_days: int = Field(default=7, alias="INVITATION_EXPIRE_DAYS")
+
+    # Email (invitation links are logged when SMTP is unset)
+    smtp_host: str | None = Field(default=None, alias="SMTP_HOST")
+    smtp_port: int = Field(default=587, alias="SMTP_PORT")
+    smtp_user: str | None = Field(default=None, alias="SMTP_USER")
+    smtp_password: str | None = Field(default=None, alias="SMTP_PASSWORD")
+    smtp_from_email: str = Field(
+        default="noreply@carevision.local",
+        alias="SMTP_FROM_EMAIL",
+    )
+    smtp_use_tls: bool = Field(default=True, alias="SMTP_USE_TLS")
+
+    @model_validator(mode="before")
+    @classmethod
+    def map_legacy_frontend_and_smtp_env(cls, data: Any) -> Any:
+        """Accept FRONTEND_BASE_URL and SMTP_FROM from older .env files."""
+        if not isinstance(data, dict):
+            return data
+        merged = dict(data)
+        if not merged.get("FRONTEND_URL") and not merged.get("frontend_url"):
+            legacy = merged.get("FRONTEND_BASE_URL") or merged.get("frontend_base_url")
+            if legacy:
+                merged["FRONTEND_URL"] = legacy
+        if not merged.get("SMTP_FROM_EMAIL") and not merged.get("smtp_from_email"):
+            legacy_from = merged.get("SMTP_FROM") or merged.get("smtp_from")
+            if legacy_from:
+                merged["SMTP_FROM_EMAIL"] = legacy_from
+        return merged
+
+    @property
+    def smtp_configured(self) -> bool:
+        return bool(self.smtp_host and self.smtp_from_email)
 
 
 @lru_cache

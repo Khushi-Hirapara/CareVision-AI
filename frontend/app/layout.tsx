@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { DM_Sans } from "next/font/google";
 import { AuthProvider } from "@/components/auth/AuthProvider";
+import { RoleRouteGuard } from "@/components/auth/RoleRouteGuard";
 import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
 import "./globals.css";
@@ -29,9 +30,11 @@ export default function RootLayout({
     <html lang="en" className={`${dmSans.variable} h-full`}>
       <body className="flex min-h-full flex-col antialiased">
         <AuthProvider>
-          <Navbar />
-          <main className="flex-1">{children}</main>
-          <Footer />
+          <RoleRouteGuard>
+            <Navbar />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </RoleRouteGuard>
         </AuthProvider>
       </body>
     </html>

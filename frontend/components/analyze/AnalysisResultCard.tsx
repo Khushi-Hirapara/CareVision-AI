@@ -2,8 +2,10 @@ import { ShieldCheck } from "lucide-react";
 import type { AnalysisResult } from "@/lib/types";
 import { formatPercent } from "@/lib/utils";
 import { ConfidenceBar } from "@/components/ConfidenceBar";
+import { AiFindingsSection } from "@/components/scans/AiFindingsSection";
+import { FollowUpRecommendationSection } from "@/components/scans/FollowUpRecommendationSection";
 import { HeatmapPanel } from "@/components/HeatmapPanel";
-import { PredictionBadge } from "@/components/ui/Badge";
+import { PredictionBadge, SeverityBadge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 
 interface AnalysisResultCardProps {
@@ -17,7 +19,10 @@ export function AnalysisResultCard({ result, imageUrl }: AnalysisResultCardProps
     <Card className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 className="text-sm font-semibold text-slate-900">Analysis complete</h3>
-        <PredictionBadge label={result.prediction} />
+        <div className="flex flex-wrap items-center gap-2">
+          <PredictionBadge label={result.prediction} />
+          <SeverityBadge severity={result.severity} />
+        </div>
       </div>
 
       <div className="rounded-xl border border-slate-100 bg-slate-50/50 p-4">
@@ -25,6 +30,12 @@ export function AnalysisResultCard({ result, imageUrl }: AnalysisResultCardProps
           Prediction
         </p>
         <p className="mt-1 text-2xl font-bold text-slate-900">{result.prediction}</p>
+        {result.severity !== "None" ? (
+          <p className="mt-2 text-sm font-medium text-slate-600">
+            AI severity:{" "}
+            <span className="font-semibold text-slate-900">{result.severity}</span>
+          </p>
+        ) : null}
         <div className="mt-4">
           <ConfidenceBar value={result.confidence} />
         </div>
@@ -32,6 +43,13 @@ export function AnalysisResultCard({ result, imageUrl }: AnalysisResultCardProps
           Model confidence: {formatPercent(result.confidence)}
         </p>
       </div>
+
+      <AiFindingsSection findings={result.aiFindings} />
+
+      <FollowUpRecommendationSection
+        followUpRecommendation={result.followUpRecommendation}
+        variant={result.prediction === "Pneumonia" ? "pneumonia" : "normal"}
+      />
 
       <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-4">
         <div className="mb-2 flex items-center gap-2 text-emerald-800">

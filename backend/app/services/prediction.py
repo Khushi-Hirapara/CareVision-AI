@@ -11,7 +11,10 @@ from app.core.http_errors import error_detail
 from app.schemas.predict import PredictionLabel
 from app.services.grad_cam import try_generate_grad_cam_heatmap
 from app.services.ml_inference import run_model_inference
+from app.services.ai_findings import build_ai_findings
+from app.services.follow_up_recommendation import build_follow_up_recommendation
 from app.services.recommendations import build_recommendation
+from app.services.severity import SeverityLabel, compute_severity
 from app.services.upload import to_storage_path
 logger = logging.getLogger(__name__)
 
@@ -25,6 +28,9 @@ _MODEL_LABEL_TO_API: dict[str, PredictionLabel] = {
 class PredictionResult:
     prediction: PredictionLabel
     confidence: float
+    severity: SeverityLabel
+    ai_findings: str
+    follow_up_recommendation: str
     recommendation: str
     image_path: str
     heatmap_path: str | None
@@ -67,6 +73,9 @@ def run_prediction(image_path: Path, settings: Settings) -> PredictionResult:
         )
 
     recommendation = build_recommendation(prediction)
+    severity = compute_severity(prediction, inference.confidence)
+    ai_findings = build_ai_findings(prediction, severity)
+    follow_up_recommendation = build_follow_up_recommendation(prediction, severity)
     heatmap_file = try_generate_grad_cam_heatmap(
         image_path, inference.prediction, settings
     )
@@ -74,6 +83,9 @@ def run_prediction(image_path: Path, settings: Settings) -> PredictionResult:
     return PredictionResult(
         prediction=prediction,
         confidence=inference.confidence,
+        severity=severity,
+        ai_findings=ai_findings,
+        follow_up_recommendation=follow_up_recommendation,
         recommendation=recommendation,
         image_path=to_storage_path(image_path),
         heatmap_path=to_storage_path(heatmap_file) if heatmap_file else None,

@@ -5,21 +5,30 @@ import {
   FileText,
   Hash,
   Layers,
+  Cpu,
   ScanLine,
   Stethoscope,
   User,
 } from "lucide-react";
 import type { ReactNode } from "react";
-import type { ScanRecord } from "@/lib/types";
+import { AiFindingsSection } from "@/components/scans/AiFindingsSection";
+import { FollowUpRecommendationSection } from "@/components/scans/FollowUpRecommendationSection";
+import { ScanAiChatSection } from "@/components/scans/ScanAiChatSection";
+import { ScanNotesSection } from "@/components/scans/ScanNotesSection";
+import type { ScanRecord, UserRole } from "@/lib/types";
 import { formatDate, formatPercent, cn } from "@/lib/utils";
 import { DownloadReportButton } from "@/components/DownloadReportButton";
-import { PredictionBadge } from "@/components/ui/Badge";
+import { PATIENT_DASHBOARD_PATH } from "@/lib/auth-routes";
+import { getMyScanReportUrl } from "@/lib/my-scans";
+import { getScanReportUrl } from "@/lib/api";
+import { PredictionBadge, SeverityBadge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { StudyImage } from "@/components/ui/StudyImage";
 import { MedicalDisclaimer } from "@/components/ui/MedicalDisclaimer";
 
 interface ScanDetailViewProps {
   scan: ScanRecord;
+  userRole: UserRole;
 }
 
 function SectionHeader({
@@ -123,20 +132,26 @@ function ImagingPanel({
   );
 }
 
-export function ScanDetailView({ scan }: ScanDetailViewProps) {
+export function ScanDetailView({ scan, userRole }: ScanDetailViewProps) {
+  const isPatient = userRole === "patient";
   const isPneumonia = scan.prediction === "Pneumonia";
   const confidencePct = Math.round(scan.confidence * 100);
+  const backHref = isPatient ? PATIENT_DASHBOARD_PATH : "/history";
+  const reportUrl = isPatient
+    ? getMyScanReportUrl(scan.id)
+    : getScanReportUrl(scan.id);
 
   return (
     <div className="space-y-6">
       {/* Actions */}
       <div className="scan-detail-actions flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <Link href="/history" className="scan-detail-back">
+        <Link href={backHref} className="scan-detail-back">
           <ArrowLeft className="h-4 w-4" aria-hidden />
-          Back to History
+          {isPatient ? "Back to My Dashboard" : "Back to History"}
         </Link>
         <DownloadReportButton
           scanId={scan.id}
+          reportUrl={reportUrl}
           label="Download PDF Report"
           className="w-full sm:w-auto sm:items-end"
         />
@@ -151,7 +166,7 @@ export function ScanDetailView({ scan }: ScanDetailViewProps) {
             description="Demographics and scan identifiers for this study"
           />
         </div>
-        <div className="grid gap-3 p-5 sm:grid-cols-3 sm:gap-4 sm:p-6">
+        <div className="grid gap-3 p-5 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4 sm:p-6">
           <InfoTile
             label="Patient name"
             value={scan.patientName}
@@ -164,6 +179,11 @@ export function ScanDetailView({ scan }: ScanDetailViewProps) {
             icon={Calendar}
           />
           <InfoTile label="Scan ID" value={scan.id} icon={Hash} />
+          <InfoTile
+            label="AI Model Version"
+            value={scan.modelVersion ?? "Not recorded"}
+            icon={Cpu}
+          />
         </div>
       </Card>
 
@@ -189,6 +209,7 @@ export function ScanDetailView({ scan }: ScanDetailViewProps) {
                     label={scan.prediction}
                     className="px-3 py-1 text-sm"
                   />
+                  <SeverityBadge severity={scan.severity} className="px-3 py-1 text-sm" />
                   <span
                     className={cn(
                       "text-2xl font-bold tabular-nums",
@@ -217,6 +238,20 @@ export function ScanDetailView({ scan }: ScanDetailViewProps) {
                       : "Model suggests no pneumonia pattern on this chest radiograph."}
                   </p>
                 </div>
+
+                <InfoTile
+                  label="AI severity"
+                  value={scan.severity}
+                  icon={Stethoscope}
+                  highlight={scan.severity !== "None"}
+                />
+
+                <AiFindingsSection findings={scan.aiFindings} />
+
+                <FollowUpRecommendationSection
+                  followUpRecommendation={scan.followUpRecommendation}
+                  variant={isPneumonia ? "pneumonia" : "normal"}
+                />
 
                 <div>
                   <div className="mb-2 flex items-center justify-between text-xs">
@@ -325,6 +360,10 @@ export function ScanDetailView({ scan }: ScanDetailViewProps) {
           </Card>
         </div>
       </div>
+
+      <ScanAiChatSection scanId={scan.id} userRole={userRole} />
+
+      <ScanNotesSection scanId={scan.id} userRole={userRole} />
 
       {/* Medical disclaimer */}
       <MedicalDisclaimer />

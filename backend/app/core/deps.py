@@ -1,9 +1,12 @@
-"""FastAPI dependencies for authentication."""
+"""FastAPI dependencies for authentication and role-based access."""
+
+from collections.abc import Callable
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
+from app.core.roles import DOCTOR, PATIENT
 from app.core.security import decode_access_token
 from app.database import get_db
 from app.models.user import User
@@ -40,3 +43,27 @@ async def get_current_user(
         raise credentials_exception
 
     return user
+
+
+def require_role(required_role: str) -> Callable[..., User]:
+    async def role_checker(current_user: User = Depends(get_current_user)) -> User:
+        if current_user.role != required_role:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"This action requires the {required_role} role.",
+            )
+        return current_user
+
+    return role_checker
+
+
+async def require_doctor(
+    current_user: User = Depends(require_role(DOCTOR)),
+) -> User:
+    return current_user
+
+
+async def require_patient(
+    current_user: User = Depends(require_role(PATIENT)),
+) -> User:
+    return current_user

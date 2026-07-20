@@ -6,7 +6,7 @@ import { ArrowRight, ChevronRight, History } from "lucide-react";
 import { LoadingPanel } from "@/components/ui/LoadingPanel";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorAlert } from "@/components/ui/ErrorAlert";
-import { PredictionBadge } from "@/components/ui/Badge";
+import { PredictionBadge, SeverityBadge } from "@/components/ui/Badge";
 import { StudyImage } from "@/components/ui/StudyImage";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { fetchScans } from "@/lib/api";
@@ -14,7 +14,7 @@ import type { ScanRecord } from "@/lib/types";
 import { formatDate, formatPercent } from "@/lib/utils";
 
 export function RecentScansSection() {
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, user } = useAuth();
   const [scans, setScans] = useState<ScanRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +22,7 @@ export function RecentScansSection() {
   useEffect(() => {
     if (authLoading) return;
 
-    if (!isAuthenticated) {
+    if (!isAuthenticated || user?.role === "doctor") {
       setScans([]);
       setError(null);
       setIsLoading(false);
@@ -48,7 +48,11 @@ export function RecentScansSection() {
     return () => {
       cancelled = true;
     };
-  }, [authLoading, isAuthenticated]);
+  }, [authLoading, isAuthenticated, user?.role]);
+
+  if (user?.role === "doctor") {
+    return null;
+  }
 
   return (
     <section className="border-t border-slate-200/80 bg-slate-50/50">
@@ -132,8 +136,11 @@ export function RecentScansSection() {
                     sizes="(max-width: 640px) 100vw, 33vw"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
-                  <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between gap-2">
-                    <PredictionBadge label={scan.prediction} />
+                  <div className="absolute bottom-3 left-3 right-3 flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <PredictionBadge label={scan.prediction} />
+                      <SeverityBadge severity={scan.severity} />
+                    </div>
                     <span className="rounded-md bg-black/40 px-2 py-0.5 text-xs font-bold text-white backdrop-blur-sm">
                       {formatPercent(scan.confidence)}
                     </span>

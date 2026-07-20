@@ -46,7 +46,10 @@ def check_database_connection() -> bool:
 
 
 def init_db() -> None:
-    """Create all tables. Use Alembic for production migrations."""
+    """Create all tables for fresh installs.
+
+    For existing databases, prefer: alembic upgrade head
+    """
     from app import models  # noqa: F401 — register ORM models with Base.metadata
 
     Base.metadata.create_all(bind=engine)

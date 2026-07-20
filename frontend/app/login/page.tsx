@@ -11,6 +11,7 @@ import {
 import { GuestOnly } from "@/components/auth/GuestOnly";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { AuthApiError } from "@/lib/auth";
+import { resolvePostAuthPath } from "@/lib/auth-routes";
 import { ErrorAlert } from "@/components/ui/ErrorAlert";
 
 function LoginForm() {
@@ -28,9 +29,8 @@ function LoginForm() {
     setIsSubmitting(true);
 
     try {
-      await login(email.trim(), password);
-      const next = searchParams.get("next");
-      router.replace(next && next.startsWith("/") ? next : "/analyze");
+      const profile = await login(email.trim(), password);
+      router.replace(resolvePostAuthPath(profile.role, searchParams.get("next")));
     } catch (err) {
       setError(
         err instanceof AuthApiError

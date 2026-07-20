@@ -2,24 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Activity,
-  History,
-  Home,
-  LogIn,
-  Upload,
-  UserPlus,
-} from "lucide-react";
+import { Activity, LogIn, UserPlus } from "lucide-react";
 import { UserMenu } from "@/components/auth/UserMenu";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { navLinksForRole, type NavLinkItem } from "@/lib/nav-links";
 import { cn } from "@/lib/utils";
-
-const publicLinks = [{ href: "/", label: "Home", icon: Home }];
-
-const protectedLinks = [
-  { href: "/analyze", label: "Analyze X-Ray", icon: Upload },
-  { href: "/history", label: "History", icon: History },
-];
 
 function NavLink({
   href,
@@ -27,17 +14,12 @@ function NavLink({
   icon: Icon,
   pathname,
   compact = false,
-}: {
-  href: string;
-  label: string;
-  icon: typeof Home;
-  pathname: string;
-  compact?: boolean;
-}) {
+}: NavLinkItem & { pathname: string; compact?: boolean }) {
   const active =
     href === "/"
       ? pathname === "/"
-      : pathname === href || pathname.startsWith(`${href}/`);
+      : pathname === href ||
+        (href.length > 1 && pathname.startsWith(`${href}/`));
 
   return (
     <Link
@@ -62,11 +44,11 @@ function NavLink({
 
 export function Navbar() {
   const pathname = usePathname();
-  const { isLoading, isAuthenticated } = useAuth();
+  const { isLoading, isAuthenticated, user } = useAuth();
 
   const navLinks = isAuthenticated
-    ? [...publicLinks, ...protectedLinks]
-    : publicLinks;
+    ? navLinksForRole(user?.role)
+    : navLinksForRole(undefined);
 
   const isAuthPage = pathname === "/login" || pathname === "/register";
 

@@ -7,6 +7,8 @@ import { apiFetch } from "@/lib/api-client";
 
 interface DownloadReportButtonProps {
   scanId: string;
+  /** Override URL (e.g. /my/scans/{id}/report for patients). */
+  reportUrl?: string;
   className?: string;
   variant?: "primary" | "outline";
   size?: "md" | "sm";
@@ -27,6 +29,7 @@ const sizeClasses = {
 
 export function DownloadReportButton({
   scanId,
+  reportUrl,
   className,
   variant = "primary",
   size = "md",
@@ -40,7 +43,13 @@ export function DownloadReportButton({
     setError(null);
 
     try {
-      const response = await apiFetch(getScanReportUrl(scanId));
+      const response = await apiFetch(reportUrl ?? getScanReportUrl(scanId));
+      if (response.status === 404) {
+        throw new Error("Report not found or you do not have access to this scan.");
+      }
+      if (response.status === 403) {
+        throw new Error("You do not have permission to download this report.");
+      }
       if (!response.ok) {
         throw new Error("Could not generate the PDF report.");
       }

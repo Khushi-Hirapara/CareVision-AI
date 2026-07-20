@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { DashboardPreview } from "@/components/home/DashboardPreview";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { dashboardPathForRole } from "@/lib/auth-routes";
+import { PATIENT_REPORTS_PATH } from "@/lib/nav-links";
 
 const highlights = [
   "CNN pneumonia screening",
@@ -75,13 +77,27 @@ export function HomeHero() {
             <div className="mt-9 flex flex-wrap items-center gap-3">
               {!isLoading && isAuthenticated ? (
                 <>
-                  <Link href="/analyze" className="btn-primary shadow-md shadow-teal-600/20">
-                    Analyze X-Ray
+                  <Link
+                    href={user ? dashboardPathForRole(user.role) : "/"}
+                    className="btn-primary shadow-md shadow-teal-600/20"
+                  >
+                    Dashboard
                     <ArrowRight className="h-4 w-4" aria-hidden />
                   </Link>
-                  <Link href="/history" className="btn-secondary">
-                    View history
-                  </Link>
+                  {user?.role !== "patient" && (
+                    <Link href="/analyze" className="btn-secondary">
+                      Analyze X-Ray
+                    </Link>
+                  )}
+                  {user?.role === "patient" ? (
+                    <Link href={PATIENT_REPORTS_PATH} className="btn-secondary">
+                      My Reports
+                    </Link>
+                  ) : (
+                    <Link href="/history" className="btn-secondary">
+                      View history
+                    </Link>
+                  )}
                   {user && (
                     <p className="w-full text-sm text-slate-500 sm:w-auto sm:pl-2">
                       Welcome back,{" "}
@@ -98,7 +114,7 @@ export function HomeHero() {
                     className="btn-primary shadow-md shadow-teal-600/20"
                   >
                     <UserPlus className="h-4 w-4" aria-hidden />
-                    Get started free
+                    Register as doctor
                     <ArrowRight className="h-4 w-4" aria-hidden />
                   </Link>
                   <Link href="/login" className="btn-secondary">

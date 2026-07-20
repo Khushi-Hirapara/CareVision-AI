@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, LogOut, User } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { PROFILE_PATH } from "@/lib/auth-routes";
 import { cn } from "@/lib/utils";
 
 export function UserMenu() {
@@ -40,7 +41,7 @@ export function UserMenu() {
 
   if (!user) return null;
 
-  const profileActive = pathname === "/profile";
+  const profileActive = pathname === PROFILE_PATH;
 
   return (
     <div ref={menuRef} className="relative">
@@ -81,7 +82,7 @@ export function UserMenu() {
           </div>
 
           <Link
-            href="/profile"
+            href={PROFILE_PATH}
             role="menuitem"
             className={cn(
               "flex items-center gap-2 px-3 py-2.5 text-sm font-medium transition",

@@ -3,10 +3,26 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { dashboardPathForRole } from "@/lib/auth-routes";
+import { PATIENT_REPORTS_PATH } from "@/lib/nav-links";
 import { MedicalDisclaimer } from "@/components/ui/MedicalDisclaimer";
 
 export function HomeCta() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
+  const primaryHref = !isAuthenticated
+    ? "/register"
+    : user?.role === "patient"
+      ? PATIENT_REPORTS_PATH
+      : "/analyze";
+  const primaryLabel = !isAuthenticated
+    ? "Create free account"
+    : user?.role === "patient"
+      ? "My reports"
+      : "Open analyzer";
+  const secondaryHref = isAuthenticated
+    ? dashboardPathForRole(user?.role ?? "doctor")
+    : "/login";
+  const secondaryLabel = isAuthenticated ? "Go to dashboard" : "Sign in";
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
@@ -33,18 +49,18 @@ export function HomeCta() {
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             {!isLoading && (
               <Link
-                href={isAuthenticated ? "/analyze" : "/register"}
+                href={primaryHref}
                 className="inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-semibold text-teal-800 shadow-sm transition hover:bg-teal-50"
               >
-                {isAuthenticated ? "Open analyzer" : "Create free account"}
+                {primaryLabel}
                 <ArrowRight className="h-4 w-4" aria-hidden />
               </Link>
             )}
             <Link
-              href={isAuthenticated ? "/history" : "/login"}
+              href={secondaryHref}
               className="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/20"
             >
-              {isAuthenticated ? "Browse history" : "Sign in"}
+              {secondaryLabel}
             </Link>
           </div>
 

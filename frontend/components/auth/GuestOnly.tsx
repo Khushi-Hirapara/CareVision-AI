@@ -3,6 +3,7 @@
 import { useEffect, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { resolvePostAuthPath } from "@/lib/auth-routes";
 import { LoadingPanel } from "@/components/ui/LoadingPanel";
 
 export function GuestOnly({ children }: { children: ReactNode }) {
@@ -12,8 +13,7 @@ export function GuestOnly({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!isLoading && user) {
-      const next = searchParams.get("next");
-      router.replace(next && next.startsWith("/") ? next : "/analyze");
+      router.replace(resolvePostAuthPath(user.role, searchParams.get("next")));
     }
   }, [isLoading, user, router, searchParams]);
 

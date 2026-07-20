@@ -6,7 +6,9 @@ import {
   Activity,
   ArrowRight,
   Calendar,
+  FileText,
   History,
+  LayoutDashboard,
   Mail,
   Shield,
   Sparkles,
@@ -16,9 +18,12 @@ import {
 import { useAuth } from "@/components/auth/AuthProvider";
 import { fetchCurrentUser } from "@/lib/auth";
 import { setStoredUser } from "@/lib/auth-storage";
+import { PATIENT_DASHBOARD_PATH } from "@/lib/auth-routes";
+import { PATIENT_REPORTS_PATH } from "@/lib/nav-links";
 import { Card } from "@/components/ui/Card";
 import { LoadingPanel } from "@/components/ui/LoadingPanel";
 import { fetchScans } from "@/lib/api";
+import { fetchMyScans } from "@/lib/my-scans";
 import type { AuthUser, ScanRecord } from "@/lib/types";
 import { cn, formatDate, getInitials } from "@/lib/utils";
 
@@ -143,7 +148,10 @@ export function ProfileView({ user: initialUser }: { user: AuthUser }) {
     let cancelled = false;
     void (async () => {
       try {
-        const data = await fetchScans(200);
+        const data =
+          user.role === "patient"
+            ? await fetchMyScans(200)
+            : await fetchScans(200);
         if (!cancelled) setScans(data);
       } catch {
         if (!cancelled) setScans([]);
@@ -154,11 +162,73 @@ export function ProfileView({ user: initialUser }: { user: AuthUser }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [user.role]);
 
   const stats = useMemo(() => computeStats(scans), [scans]);
   const initials = getInitials(user.name);
   const memberSince = user.createdAt ? formatDate(user.createdAt) : null;
+  const isDoctor = user.role === "doctor";
+  const isPatient = user.role === "patient";
+
+  const heroLinks = isPatient
+    ? [
+        {
+          href: PATIENT_DASHBOARD_PATH,
+          label: "My Dashboard",
+          icon: LayoutDashboard,
+          primary: true,
+        },
+        {
+          href: PATIENT_REPORTS_PATH,
+          label: "My Reports",
+          icon: FileText,
+          primary: false,
+        },
+      ]
+    : [
+        {
+          href: "/analyze",
+          label: "Analyze X-Ray",
+          icon: Upload,
+          primary: true,
+        },
+        {
+          href: "/history",
+          label: "View history",
+          icon: History,
+          primary: false,
+        },
+      ];
+
+  const quickLinks = isPatient
+    ? [
+        {
+          href: PATIENT_DASHBOARD_PATH,
+          label: "My Dashboard",
+          icon: LayoutDashboard,
+          desc: "Overview and latest results",
+        },
+        {
+          href: PATIENT_REPORTS_PATH,
+          label: "My Reports",
+          icon: FileText,
+          desc: "Screening results and PDFs",
+        },
+      ]
+    : [
+        {
+          href: "/analyze",
+          label: "Analyze X-Ray",
+          icon: Upload,
+          desc: "Run a new screening",
+        },
+        {
+          href: "/history",
+          label: "Scan history",
+          icon: History,
+          desc: "Browse past studies",
+        },
+      ];
 
   return (
     <div className="page-shell">
@@ -210,20 +280,20 @@ export function ProfileView({ user: initialUser }: { user: AuthUser }) {
             </div>
 
             <div className="flex flex-wrap gap-2 sm:flex-col sm:items-stretch">
-              <Link
-                href="/analyze"
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-teal-800 shadow-sm transition hover:bg-teal-50"
-              >
-                <Upload className="h-4 w-4" aria-hidden />
-                Analyze X-Ray
-              </Link>
-              <Link
-                href="/history"
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/30 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/20"
-              >
-                <History className="h-4 w-4" aria-hidden />
-                View history
-              </Link>
+              {heroLinks.map(({ href, label, icon: Icon, primary }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className={
+                    primary
+                      ? "inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-teal-800 shadow-sm transition hover:bg-teal-50"
+                      : "inline-flex items-center justify-center gap-2 rounded-xl border border-white/30 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/20"
+                  }
+                >
+                  <Icon className="h-4 w-4" aria-hidden />
+                  {label}
+                </Link>
+              ))}
             </div>
           </div>
         </div>
@@ -245,7 +315,13 @@ export function ProfileView({ user: initialUser }: { user: AuthUser }) {
               <StatCard
                 label="Total scans"
                 value={stats.total}
-                sub={stats.total === 0 ? "Upload your first X-ray" : "All time"}
+                sub={
+                  stats.total === 0
+                    ? isDoctor
+                      ? "Upload your first X-ray"
+                      : "No screenings yet"
+                    : "All time"
+                }
                 accent="teal"
               />
               <StatCard
@@ -320,20 +396,7 @@ export function ProfileView({ user: initialUser }: { user: AuthUser }) {
                 Quick links
               </h2>
               <ul className="mt-4 space-y-2">
-                {[
-                  {
-                    href: "/analyze",
-                    label: "Analyze X-Ray",
-                    icon: Upload,
-                    desc: "Run a new screening",
-                  },
-                  {
-                    href: "/history",
-                    label: "Scan history",
-                    icon: History,
-                    desc: "Browse past studies",
-                  },
-                ].map(({ href, label, icon: Icon, desc }) => (
+                {quickLinks.map(({ href, label, icon: Icon, desc }) => (
                   <li key={href}>
                     <Link
                       href={href}

@@ -3,7 +3,7 @@ import { ArrowRight, Calendar } from "lucide-react";
 import type { ScanRecord } from "@/lib/types";
 import { formatDate, formatPercent } from "@/lib/utils";
 import { DownloadReportButton } from "@/components/DownloadReportButton";
-import { PredictionBadge } from "@/components/ui/Badge";
+import { PredictionBadge, SeverityBadge } from "@/components/ui/Badge";
 import { StudyImage } from "@/components/ui/StudyImage";
 import { cn } from "@/lib/utils";
 
@@ -36,6 +36,7 @@ export function ScanHistoryCard({ scan }: ScanHistoryCardProps) {
 
           <div className="flex flex-wrap items-center gap-2">
             <PredictionBadge label={scan.prediction} />
+            <SeverityBadge severity={scan.severity} />
             <span
               className={cn(
                 "inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold tabular-nums",

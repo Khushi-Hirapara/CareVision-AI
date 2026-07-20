@@ -2,7 +2,7 @@ import type { ScanRecord } from "@/lib/types";
 import { StudyImage } from "@/components/ui/StudyImage";
 import { formatDate } from "@/lib/utils";
 import { ConfidenceBar } from "./ConfidenceBar";
-import { PredictionBadge } from "./ui/Badge";
+import { PredictionBadge, SeverityBadge } from "./ui/Badge";
 import { Card } from "./ui/Card";
 
 interface ScanResultCardProps {
@@ -21,7 +21,10 @@ export function ScanResultCard({ scan }: ScanResultCardProps) {
             {scan.patientName}
           </p>
         </div>
-        <PredictionBadge label={scan.prediction} />
+        <div className="flex flex-wrap items-center gap-2">
+          <PredictionBadge label={scan.prediction} />
+          <SeverityBadge severity={scan.severity} />
+        </div>
       </div>
 
       <ConfidenceBar value={scan.confidence} />

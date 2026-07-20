@@ -1,3 +1,4 @@
+import { DashboardSection } from "@/components/dashboard/DashboardSection";
 import { HomeCta } from "@/components/home/HomeCta";
 import { HomeFeatures } from "@/components/home/HomeFeatures";
 import { HomeHero } from "@/components/home/HomeHero";
@@ -9,6 +10,7 @@ export default function HomePage() {
   return (
     <div className="home-page">
       <HomeHero />
+      <DashboardSection />
       <HomeTrustBar />
       <HomeFeatures />
       <HowItWorks />

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { RequireAuth } from "@/components/auth/RequireAuth";
+import { RequireDoctor } from "@/components/auth/RequireDoctor";
 
 export const metadata: Metadata = {
   title: "Analyze X-Ray",
@@ -10,5 +10,5 @@ export default function AnalyzeLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <RequireAuth>{children}</RequireAuth>;
+  return <RequireDoctor>{children}</RequireDoctor>;
 }

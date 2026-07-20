@@ -3,25 +3,31 @@
 import Link from "next/link";
 import { Activity, Code2, HeartPulse, ShieldAlert } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
-
-const productLinks = [
-  { href: "/", label: "Home" },
-  { href: "/analyze", label: "Analyze X-Ray" },
-  { href: "/history", label: "History" },
-];
+import { PROFILE_PATH } from "@/lib/auth-routes";
+import {
+  DOCTOR_NAV_LINKS,
+  PATIENT_NAV_LINKS,
+  PUBLIC_NAV_LINKS,
+} from "@/lib/nav-links";
 
 const accountLinksGuest = [
   { href: "/login", label: "Sign in" },
   { href: "/register", label: "Create account" },
 ];
 
-const accountLinksAuth = [{ href: "/profile", label: "Profile" }];
+const accountLinksAuth = [{ href: PROFILE_PATH, label: "Profile" }];
 
 export function Footer() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const year = new Date().getFullYear();
 
   const accountLinks = isAuthenticated ? accountLinksAuth : accountLinksGuest;
+  const productLinks =
+    isAuthenticated && user?.role === "patient"
+      ? PATIENT_NAV_LINKS.filter((l) => l.href !== PROFILE_PATH)
+      : isAuthenticated && user?.role === "doctor"
+        ? DOCTOR_NAV_LINKS
+        : PUBLIC_NAV_LINKS;
 
   return (
     <footer className="mt-auto border-t border-slate-200 bg-slate-900 text-slate-300">
@@ -117,7 +123,6 @@ export function Footer() {
           </p>
           <p className="flex items-center gap-1.5 text-center text-xs text-slate-600">
             <Code2 className="h-3.5 w-3.5" aria-hidden />
-              
           </p>
         </div>
       </div>
