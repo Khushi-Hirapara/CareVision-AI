@@ -9,6 +9,7 @@ import { ScanHistoryCard } from "@/components/ScanHistoryCard";
 import {
   ScanHistoryFilters,
   type PredictionFilter,
+  type ScanViewMode,
 } from "@/components/history/ScanHistoryFilters";
 import { ScanHistorySkeleton } from "@/components/history/ScanHistorySkeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -51,6 +52,7 @@ export default function HistoryPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [predictionFilter, setPredictionFilter] =
     useState<PredictionFilter>("all");
+  const [viewMode, setViewMode] = useState<ScanViewMode>("grid");
 
   useEffect(() => {
     if (hasPatientFilter) {
@@ -169,6 +171,8 @@ export default function HistoryPage() {
             onPredictionFilterChange={setPredictionFilter}
             resultCount={filteredScans.length}
             totalCount={scans.length}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
           />
         )}
 
@@ -212,9 +216,15 @@ export default function HistoryPage() {
         )}
 
         {!isLoading && !error && filteredScans.length > 0 && (
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          <div
+            className={
+              viewMode === "grid"
+                ? "grid gap-5 md:grid-cols-2 xl:grid-cols-3"
+                : "grid gap-5"
+            }
+          >
             {filteredScans.map((scan) => (
-              <ScanHistoryCard key={scan.id} scan={scan} />
+              <ScanHistoryCard key={scan.id} scan={scan} layout={viewMode} />
             ))}
           </div>
         )}

@@ -9,26 +9,43 @@ import { cn } from "@/lib/utils";
 
 interface ScanHistoryCardProps {
   scan: ScanRecord;
+  layout?: "grid" | "list";
 }
 
-export function ScanHistoryCard({ scan }: ScanHistoryCardProps) {
+export function ScanHistoryCard({
+  scan,
+  layout = "grid",
+}: ScanHistoryCardProps) {
   const isPneumonia = scan.prediction === "Pneumonia";
   const confidencePct = Math.round(scan.confidence * 100);
+  const isList = layout === "list";
 
   return (
-    <article className="scan-history-card group flex h-full flex-col">
-      <div className="scan-history-card__media">
-        <StudyImage
-          src={scan.imagePath}
-          alt={`Chest X-ray for ${scan.patientName}`}
-          fill
-          objectFit="contain"
-          className="p-1"
-          sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
-        />
-      </div>
+    <article
+      className={cn(
+        "scan-history-card group flex h-full flex-col",
+        isList && "w-full",
+      )}
+    >
+      {!isList ? (
+        <div className="scan-history-card__media">
+          <StudyImage
+            src={scan.imagePath}
+            alt={`Chest X-ray for ${scan.patientName}`}
+            fill
+            objectFit="contain"
+            className="p-1"
+            sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
+          />
+        </div>
+      ) : null}
 
-      <div className="flex flex-1 flex-col p-4 sm:p-5">
+      <div
+        className={cn(
+          "flex min-w-0 flex-1 flex-col p-4 sm:p-5",
+          isList && "lg:p-6",
+        )}
+      >
         <header className="space-y-2">
           <h3 className="scan-history-card__name" title={scan.patientName}>
             {scan.patientName}
@@ -79,6 +96,27 @@ export function ScanHistoryCard({ scan }: ScanHistoryCardProps) {
             />
           </div>
         </div>
+
+        {isList ? (
+          <div className="mt-4 grid gap-3 border-t border-slate-100 pt-4 lg:grid-cols-2">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                AI findings
+              </p>
+              <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-slate-600">
+                {scan.aiFindings || "No AI findings recorded."}
+              </p>
+            </div>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                Recommended next step
+              </p>
+              <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-slate-600">
+                {scan.followUpRecommendation || "No follow-up recorded."}
+              </p>
+            </div>
+          </div>
+        ) : null}
 
         <footer className="mt-5 flex flex-col gap-2 sm:flex-row">
           <Link

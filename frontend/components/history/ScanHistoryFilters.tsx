@@ -1,10 +1,11 @@
 "use client";
 
-import { Filter, Search, X } from "lucide-react";
+import { Filter, Grid2X2, List, Search, X } from "lucide-react";
 import type { PredictionLabel } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export type PredictionFilter = "all" | PredictionLabel;
+export type ScanViewMode = "grid" | "list";
 
 interface ScanHistoryFiltersProps {
   searchQuery: string;
@@ -13,6 +14,8 @@ interface ScanHistoryFiltersProps {
   onPredictionFilterChange: (value: PredictionFilter) => void;
   resultCount: number;
   totalCount: number;
+  viewMode: ScanViewMode;
+  onViewModeChange: (value: ScanViewMode) => void;
   className?: string;
 }
 
@@ -29,6 +32,8 @@ export function ScanHistoryFilters({
   onPredictionFilterChange,
   resultCount,
   totalCount,
+  viewMode,
+  onViewModeChange,
   className,
 }: ScanHistoryFiltersProps) {
   const hasActiveFilters =
@@ -73,6 +78,42 @@ export function ScanHistoryFilters({
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
+          <div
+            className="inline-flex rounded-xl border border-slate-200 bg-slate-50/80 p-1"
+            aria-label="Scan display"
+          >
+            <button
+              type="button"
+              onClick={() => onViewModeChange("grid")}
+              aria-label="Grid view"
+              aria-pressed={viewMode === "grid"}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition",
+                viewMode === "grid"
+                  ? "bg-white text-teal-700 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700",
+              )}
+            >
+              <Grid2X2 className="h-3.5 w-3.5" aria-hidden />
+              Grid
+            </button>
+            <button
+              type="button"
+              onClick={() => onViewModeChange("list")}
+              aria-label="Horizontal detailed view"
+              aria-pressed={viewMode === "list"}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition",
+                viewMode === "list"
+                  ? "bg-white text-teal-700 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700",
+              )}
+            >
+              <List className="h-3.5 w-3.5" aria-hidden />
+              Details
+            </button>
+          </div>
+
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-slate-400" aria-hidden />
             <label htmlFor="prediction-filter" className="sr-only">
