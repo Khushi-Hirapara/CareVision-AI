@@ -41,10 +41,15 @@ class ScanChatContext:
     doctor_notes: str
 
 
-def _format_study_date(dt: datetime) -> str:
+def format_study_date(dt: datetime) -> str:
     if dt.tzinfo is not None:
         dt = dt.replace(tzinfo=None)
     return dt.strftime("%B %d, %Y at %I:%M %p")
+
+
+def _format_study_date(dt: datetime) -> str:
+    """Backward-compatible alias."""
+    return format_study_date(dt)
 
 
 def _strip_clinical_disclaimer(text: str | None) -> str:

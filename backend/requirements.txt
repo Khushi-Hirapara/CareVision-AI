@@ -37,3 +37,6 @@ pylibjpeg-openjpeg>=2.0.0,<3.0.0
 # PDF reports
 reportlab>=4.2.0,<5.0.0
 qrcode[pil]>=7.4.2,<9.0.0
+
+# Gemini Developer API (Google AI Studio API key; not Vertex AI)
+google-genai>=2.12.0,<3.0.0

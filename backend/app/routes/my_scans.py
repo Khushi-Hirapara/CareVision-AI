@@ -8,7 +8,7 @@ from app.models.user import User
 from app.schemas.ai_chat import AiChatRequest, AiChatResponse
 from app.schemas.scan import ScanListResponse, ScanResponse
 from app.schemas.scan_note import ScanNoteListResponse, ScanNoteResponse
-from app.services.ai_chat import generate_scan_chat_answer
+from app.services.chat_service import process_health_chat
 from app.services.pdf_report import generate_scan_report_pdf
 from app.services.patient import get_patient_by_user_id
 from app.services.scan import count_scans_for_patient, list_scans_for_patient
@@ -132,6 +132,10 @@ def my_scan_ai_chat(
     if scan is None:
         raise _scan_not_found(scan_id)
 
-    notes = list_notes_for_scan_report(db, scan.id)
-    answer = generate_scan_chat_answer(scan, notes, body.message.strip())
-    return AiChatResponse(answer=answer)
+    result = process_health_chat(
+        db,
+        user=current_user,
+        scan=scan,
+        message=body.message.strip(),
+    )
+    return AiChatResponse(answer=result.answer)

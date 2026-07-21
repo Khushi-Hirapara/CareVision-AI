@@ -225,6 +225,18 @@ class Settings(BaseSettings):
     )
     invitation_expire_days: int = Field(default=7, alias="INVITATION_EXPIRE_DAYS")
 
+    # Gemini — Health Assistant (explains reports only; never analyzes X-rays)
+    gemini_api_key: str | None = Field(default=None, alias="GEMINI_API_KEY")
+    gemini_model: str = Field(
+        default="gemini-3.1-flash-lite",
+        alias="GEMINI_MODEL",
+    )
+    gemini_temperature: float = Field(default=0.4, alias="GEMINI_TEMPERATURE")
+    gemini_max_output_tokens: int = Field(
+        default=2048,
+        alias="GEMINI_MAX_OUTPUT_TOKENS",
+    )
+
     # Email (invitation links are logged when SMTP is unset)
     smtp_host: str | None = Field(default=None, alias="SMTP_HOST")
     smtp_port: int = Field(default=587, alias="SMTP_PORT")

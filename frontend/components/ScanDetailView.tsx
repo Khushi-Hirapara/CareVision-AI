@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import { AiAnalysisSummaryReport } from "@/components/scans/AiAnalysisSummaryReport";
 import { DicomMetadataPanel } from "@/components/scans/DicomMetadataPanel";
-import { ScanAiChatSection } from "@/components/scans/ScanAiChatSection";
 import { ScanNotesSection } from "@/components/scans/ScanNotesSection";
 import { ExplainabilityPanel } from "@/components/explainability/ExplainabilityPanel";
 import type { ScanRecord, UserRole } from "@/lib/types";
@@ -226,36 +225,6 @@ export function ScanDetailView({ scan, userRole }: ScanDetailViewProps) {
             metadata={scan.dicomMetadata}
             originalUrl={scan.originalPath}
           />
-
-          {scan.recommendation ? (
-            <Card
-              className={cn(
-                "border-l-4 p-5",
-                isPneumonia ? "border-l-rose-500" : "border-l-emerald-500",
-              )}
-            >
-              <div className="mb-2 flex items-center gap-2">
-                <FileText
-                  className={cn(
-                    "h-4 w-4",
-                    isPneumonia ? "text-rose-600" : "text-emerald-600",
-                  )}
-                  aria-hidden
-                />
-                <p
-                  className={cn(
-                    "text-[11px] font-semibold uppercase tracking-wider",
-                    isPneumonia ? "text-rose-800" : "text-emerald-800",
-                  )}
-                >
-                  Screening Guidance
-                </p>
-              </div>
-              <p className="text-sm leading-relaxed text-slate-700 whitespace-pre-line">
-                {scan.recommendation}
-              </p>
-            </Card>
-          ) : null}
         </div>
 
         {/* Images */}
@@ -314,7 +283,37 @@ export function ScanDetailView({ scan, userRole }: ScanDetailViewProps) {
         </div>
       </div>
 
-      <ScanAiChatSection scanId={scan.id} userRole={userRole} />
+      {scan.recommendation ? (
+        <Card
+          className={cn(
+            "border-l-4 p-5 sm:p-6",
+            isPneumonia ? "border-l-rose-500" : "border-l-emerald-500",
+          )}
+        >
+          <div className="grid gap-3 sm:grid-cols-[220px_minmax(0,1fr)] sm:gap-6">
+            <div className="flex items-center gap-2 sm:items-start">
+              <FileText
+                className={cn(
+                  "h-4 w-4 shrink-0 sm:mt-0.5",
+                  isPneumonia ? "text-rose-600" : "text-emerald-600",
+                )}
+                aria-hidden
+              />
+              <p
+                className={cn(
+                  "text-[11px] font-semibold uppercase tracking-wider",
+                  isPneumonia ? "text-rose-800" : "text-emerald-800",
+                )}
+              >
+                Screening Guidance
+              </p>
+            </div>
+            <p className="text-sm leading-relaxed text-slate-700 whitespace-pre-line">
+              {scan.recommendation}
+            </p>
+          </div>
+        </Card>
+      ) : null}
 
       <ScanNotesSection scanId={scan.id} userRole={userRole} />
 
