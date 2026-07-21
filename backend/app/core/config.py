@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     # Backend API
     backend_host: str = Field(default="0.0.0.0", alias="BACKEND_HOST")
     backend_port: int = Field(default=8000, alias="BACKEND_PORT")
+    backend_url: str = Field(default="http://localhost:8000", alias="BACKEND_URL")
 
     # CORS (frontend on localhost)
     cors_origins: str = Field(
@@ -48,6 +49,33 @@ class Settings(BaseSettings):
         default=60,
         alias="ACCESS_TOKEN_EXPIRE_MINUTES",
     )
+    refresh_token_expire_days: int = Field(
+        default=14,
+        alias="REFRESH_TOKEN_EXPIRE_DAYS",
+    )
+    email_verification_expire_hours: int = Field(
+        default=24,
+        alias="EMAIL_VERIFICATION_EXPIRE_HOURS",
+    )
+    password_reset_expire_hours: int = Field(
+        default=2,
+        alias="PASSWORD_RESET_EXPIRE_HOURS",
+    )
+
+    # Google and Microsoft OpenID Connect
+    oauth_session_secret: str | None = Field(default=None, alias="OAUTH_SESSION_SECRET")
+    google_client_id: str | None = Field(default=None, alias="GOOGLE_CLIENT_ID")
+    google_client_secret: str | None = Field(default=None, alias="GOOGLE_CLIENT_SECRET")
+    microsoft_client_id: str | None = Field(default=None, alias="MICROSOFT_CLIENT_ID")
+    microsoft_client_secret: str | None = Field(
+        default=None,
+        alias="MICROSOFT_CLIENT_SECRET",
+    )
+    microsoft_tenant: str = Field(default="common", alias="MICROSOFT_TENANT")
+
+    @property
+    def session_secret(self) -> str:
+        return self.oauth_session_secret or self.jwt_secret_key
 
     @model_validator(mode="before")
     @classmethod

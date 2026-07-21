@@ -2,8 +2,7 @@
 
 from collections.abc import Callable
 
-from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.roles import DOCTOR, PATIENT
@@ -12,11 +11,32 @@ from app.database import get_db
 from app.models.user import User
 from app.services.user import get_user_by_id
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+def _extract_bearer_token(authorization: str | None) -> str:
+    """Validate the Authorization header and return the raw token."""
+    missing_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Not authenticated",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    if not authorization:
+        raise missing_exception
+
+    parts = authorization.split(" ", 1)
+    if len(parts) != 2 or parts[0].lower() != "bearer" or not parts[1].strip():
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authorization header. Expected 'Bearer <token>'.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return parts[1].strip()
 
 
 async def get_current_user(
-    token: str = Depends(oauth2_scheme),
+    authorization: str = Header(
+        ...,
+        alias="Authorization",
+        description="Bearer access token. Enter `Bearer <access_token>`.",
+    ),
     db: Session = Depends(get_db),
 ) -> User:
     credentials_exception = HTTPException(
@@ -24,6 +44,8 @@ async def get_current_user(
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+
+    token = _extract_bearer_token(authorization)
 
     payload = decode_access_token(token)
     if payload is None:

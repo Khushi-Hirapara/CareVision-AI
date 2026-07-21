@@ -35,6 +35,7 @@ def create_access_token(
     to_encode: dict[str, Any] = {
         "sub": str(subject),
         "exp": expire,
+        "type": "access",
     }
     return jwt.encode(
         to_encode,
@@ -45,10 +46,14 @@ def create_access_token(
 
 def decode_access_token(token: str) -> dict[str, Any] | None:
     try:
-        return jwt.decode(
+        payload = jwt.decode(
             token,
             settings.jwt_secret_key,
             algorithms=[settings.jwt_algorithm],
         )
     except JWTError:
         return None
+    token_type = payload.get("type")
+    if token_type is not None and token_type != "access":
+        return None
+    return payload

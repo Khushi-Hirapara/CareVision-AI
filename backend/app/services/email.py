@@ -14,6 +14,8 @@ from app.core.email_delivery import FAILED, SKIPPED, SENT
 logger = logging.getLogger(__name__)
 
 INVITATION_SUBJECT = "You're invited to CareVision AI"
+VERIFY_EMAIL_SUBJECT = "Verify your CareVision AI email"
+RESET_PASSWORD_SUBJECT = "Reset your CareVision AI password"
 
 MEDICAL_DISCLAIMER = (
     "CareVision AI provides AI-assisted screening results for clinical review only. "
@@ -167,3 +169,156 @@ def send_invitation_email(
             safe_message,
         )
         return EmailDeliveryResult(status=FAILED, error_message=safe_message)
+
+
+def _send_email(
+    settings: Settings,
+    *,
+    to_email: str,
+    subject: str,
+    plain: str,
+    html: str,
+    skip_log_label: str,
+    sent_log_label: str,
+    fail_log_label: str,
+) -> EmailDeliveryResult:
+    if not settings.smtp_configured:
+        logger.info("%s (SMTP not configured) to=%s", skip_log_label, to_email)
+        return EmailDeliveryResult(status=SKIPPED)
+
+    message = EmailMessage()
+    message["Subject"] = subject
+    message["From"] = settings.smtp_from_email
+    message["To"] = to_email
+    message.set_content(plain)
+    message.add_alternative(html, subtype="html")
+
+    try:
+        with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=30) as server:
+            if settings.smtp_use_tls:
+                server.starttls()
+            if settings.smtp_user and settings.smtp_password:
+                server.login(settings.smtp_user, settings.smtp_password)
+            server.send_message(message)
+        logger.info("%s to=%s", sent_log_label, to_email)
+        return EmailDeliveryResult(status=SENT)
+    except Exception as exc:
+        safe_message = _sanitize_error_message(exc, settings)
+        logger.warning(
+            "%s to=%s error_type=%s detail=%s",
+            fail_log_label,
+            to_email,
+            type(exc).__name__,
+            safe_message,
+        )
+        return EmailDeliveryResult(status=FAILED, error_message=safe_message)
+
+
+def send_verification_email(
+    settings: Settings,
+    *,
+    to_email: str,
+    name: str,
+    verify_url: str,
+) -> EmailDeliveryResult:
+    plain = (
+        f"Hello {name},\n\n"
+        f"Please verify your email for {settings.app_name}:\n"
+        f"{verify_url}\n\n"
+        f"This link expires in {settings.email_verification_expire_hours} hours.\n\n"
+        f"If you did not create an account, you can ignore this email."
+    )
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+<body style="font-family:Segoe UI,Helvetica,Arial,sans-serif;line-height:1.5;color:#1e293b;max-width:560px;margin:0 auto;padding:24px;">
+  <p>Hello {name},</p>
+  <p>Please verify your email for <strong>{settings.app_name}</strong>.</p>
+  <p style="margin:28px 0;">
+    <a href="{verify_url}"
+       style="display:inline-block;background:#0d9488;color:#ffffff;text-decoration:none;
+              font-weight:600;padding:12px 24px;border-radius:8px;">
+      Verify email
+    </a>
+  </p>
+  <p style="font-size:14px;color:#64748b;">
+    Or copy this link:<br>
+    <a href="{verify_url}" style="color:#0d9488;word-break:break-all;">{verify_url}</a>
+  </p>
+  <p style="font-size:14px;color:#64748b;">
+    This link expires in {settings.email_verification_expire_hours} hours.
+  </p>
+</body>
+</html>"""
+    if not settings.smtp_configured:
+        logger.info(
+            "Verification email skipped (SMTP not configured) to=%s verify_url=%s",
+            to_email,
+            verify_url,
+        )
+        return EmailDeliveryResult(status=SKIPPED)
+    return _send_email(
+        settings,
+        to_email=to_email,
+        subject=VERIFY_EMAIL_SUBJECT,
+        plain=plain,
+        html=html,
+        skip_log_label="Verification email skipped",
+        sent_log_label="Verification email sent",
+        fail_log_label="Verification email failed",
+    )
+
+
+def send_password_reset_email(
+    settings: Settings,
+    *,
+    to_email: str,
+    name: str,
+    reset_url: str,
+) -> EmailDeliveryResult:
+    plain = (
+        f"Hello {name},\n\n"
+        f"We received a request to reset your {settings.app_name} password:\n"
+        f"{reset_url}\n\n"
+        f"This link expires in {settings.password_reset_expire_hours} hours.\n\n"
+        f"If you did not request a reset, you can ignore this email."
+    )
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+<body style="font-family:Segoe UI,Helvetica,Arial,sans-serif;line-height:1.5;color:#1e293b;max-width:560px;margin:0 auto;padding:24px;">
+  <p>Hello {name},</p>
+  <p>We received a request to reset your <strong>{settings.app_name}</strong> password.</p>
+  <p style="margin:28px 0;">
+    <a href="{reset_url}"
+       style="display:inline-block;background:#0d9488;color:#ffffff;text-decoration:none;
+              font-weight:600;padding:12px 24px;border-radius:8px;">
+      Reset password
+    </a>
+  </p>
+  <p style="font-size:14px;color:#64748b;">
+    Or copy this link:<br>
+    <a href="{reset_url}" style="color:#0d9488;word-break:break-all;">{reset_url}</a>
+  </p>
+  <p style="font-size:14px;color:#64748b;">
+    This link expires in {settings.password_reset_expire_hours} hours.
+  </p>
+</body>
+</html>"""
+    if not settings.smtp_configured:
+        logger.info(
+            "Password reset email skipped (SMTP not configured) to=%s reset_url=%s",
+            to_email,
+            reset_url,
+        )
+        return EmailDeliveryResult(status=SKIPPED)
+    return _send_email(
+        settings,
+        to_email=to_email,
+        subject=RESET_PASSWORD_SUBJECT,
+        plain=plain,
+        html=html,
+        skip_log_label="Password reset email skipped",
+        sent_log_label="Password reset email sent",
+        fail_log_label="Password reset email failed",
+    )

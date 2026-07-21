@@ -35,6 +35,7 @@ class UserResponse(UserBase):
 
     id: int
     role: str
+    email_verified_at: datetime | None = None
     created_at: datetime
 
 
