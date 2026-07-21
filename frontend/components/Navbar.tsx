@@ -51,11 +51,19 @@ export function Navbar() {
     : navLinksForRole(undefined);
 
   const isAuthPage = pathname === "/login" || pathname === "/register";
+  // Guests: show Home in desktop nav. Logged-in: app links only (no Home).
+  const showDesktopNav = !isAuthPage && (isAuthenticated || navLinks.length > 0);
+  const showMobileNav = !isAuthPage && isAuthenticated && navLinks.length > 0;
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
-        <Link href="/" className="flex shrink-0 items-center gap-2.5">
+        <Link
+          href="/"
+          className="flex shrink-0 items-center gap-2.5"
+          aria-label="CareVision AI — go to landing page"
+          title="Go to landing page"
+        >
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-teal-600 text-white shadow-sm">
             <Activity className="h-5 w-5" aria-hidden />
           </span>
@@ -69,14 +77,18 @@ export function Navbar() {
           </div>
         </Link>
 
-        <nav
-          className="hidden min-w-0 flex-1 items-center justify-center gap-1 md:flex"
-          aria-label="Main"
-        >
-          {navLinks.map((link) => (
-            <NavLink key={link.href} {...link} pathname={pathname} />
-          ))}
-        </nav>
+        {showDesktopNav ? (
+          <nav
+            className="hidden min-w-0 flex-1 items-center justify-center gap-1 md:flex"
+            aria-label="Main"
+          >
+            {navLinks.map((link) => (
+              <NavLink key={link.href} {...link} pathname={pathname} />
+            ))}
+          </nav>
+        ) : (
+          <div className="hidden flex-1 md:block" aria-hidden />
+        )}
 
         <div className="flex shrink-0 items-center gap-2">
           {!isLoading && isAuthenticated && <UserMenu />}
@@ -102,7 +114,7 @@ export function Navbar() {
         </div>
       </div>
 
-      {!isAuthPage && isAuthenticated && (
+      {showMobileNav ? (
         <nav
           className="flex items-center gap-0.5 overflow-x-auto border-t border-slate-100 px-4 pb-2 md:hidden"
           aria-label="Main mobile"
@@ -111,7 +123,7 @@ export function Navbar() {
             <NavLink key={link.href} {...link} pathname={pathname} compact />
           ))}
         </nav>
-      )}
+      ) : null}
     </header>
   );
 }

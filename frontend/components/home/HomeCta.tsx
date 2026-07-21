@@ -39,11 +39,11 @@ export function HomeCta() {
 
         <div className="relative">
           <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
-            Ready to screen your next study?
+            Ready to review your next chest X-ray?
           </h2>
           <p className="mx-auto mt-3 max-w-lg text-sm text-teal-50/95 sm:text-base">
-            Join CareVision AI to run local pneumonia screening with full scan
-            history and explainable heatmaps.
+            Use the current pneumonia screening workflow with image quality
+            checks, explainable heatmaps, scan history, and clinical reports.
           </p>
 
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">

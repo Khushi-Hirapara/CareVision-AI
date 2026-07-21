@@ -11,81 +11,83 @@ import { Card } from "@/components/ui/Card";
 const features = [
   {
     icon: Upload,
-    title: "Frictionless intake",
-    text: "Drag-and-drop PNG, JPEG, or DICOM (.dcm) studies with optional patient labels-ready for hospital workflows.",
+    title: "Flexible study intake",
+    text: "Upload PNG, JPEG, or DICOM studies with patient-linked records and pre-inference quality validation.",
     accent: "from-teal-500/10 to-cyan-500/5",
   },
   {
     icon: Brain,
-    title: "Deep learning core",
-    text: "EfficientNet-based classifier tuned on chest radiographs for reliable Normal vs Pneumonia separation.",
+    title: "Condition-specific AI",
+    text: "A modular model layer currently provides Normal versus Pneumonia screening and can evolve independently.",
     accent: "from-violet-500/10 to-indigo-500/5",
   },
   {
     icon: Layers,
-    title: "Grad-CAM overlays",
-    text: "See which regions drove the model so radiologists and researchers can validate findings visually.",
+    title: "Visual explainability",
+    text: "Review Grad-CAM overlays, suspicious region labels, affected-area estimates, and localization strength.",
     accent: "from-amber-500/10 to-orange-500/5",
   },
   {
     icon: LineChart,
-    title: "Confidence scoring",
-    text: "Calibrated probability outputs with adjustable thresholds for research or triage scenarios.",
+    title: "Clear confidence context",
+    text: "See the score, confidence tier, and plain-language interpretation—separate from disease severity.",
     accent: "from-emerald-500/10 to-teal-500/5",
   },
   {
     icon: FileText,
-    title: "PDF clinical reports",
-    text: "One-click export with study metadata, prediction summary, and recommendations for your records.",
+    title: "Clinical documentation",
+    text: "Export hospital-style PDF reports with patient and doctor details, images, recommendations, and QR access.",
     accent: "from-sky-500/10 to-blue-500/5",
   },
   {
     icon: Shield,
-    title: "Account-scoped history",
-    text: "JWT-secured API with private scan libraries-only you access your studies and reports.",
+    title: "Secure longitudinal review",
+    text: "Use role-based records, doctor notes, scan comparison, and trend views without exposing studies publicly.",
     accent: "from-rose-500/10 to-pink-500/5",
   },
 ];
 
 export function HomeFeatures() {
   return (
-    <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+    <section className="bg-slate-950 text-white">
+      <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
       <div className="mx-auto max-w-2xl text-center">
-        <p className="text-xs font-semibold uppercase tracking-widest text-teal-600">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-teal-400">
           Platform capabilities
         </p>
-        <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-          Everything you need for X-ray screening
+        <h2 className="mt-3 text-3xl font-bold tracking-tight text-white sm:text-4xl">
+          Designed for clear, explainable review
         </h2>
-        <p className="mt-3 text-base text-slate-600">
-          From upload to explainable results-designed for hospitals, labs, and
-          ML research teams running CareVision locally.
+        <p className="mt-4 text-base text-slate-400">
+          Every capability supports a traceable workflow—from image validation
+          to professional documentation.
         </p>
       </div>
 
-      <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-12 grid gap-x-10 gap-y-5 md:grid-cols-2">
         {features.map(({ icon: Icon, title, text, accent }) => (
           <Card
             key={title}
-            className="group relative overflow-hidden border-slate-200/80 transition duration-300 hover:-translate-y-0.5 hover:border-teal-200/80 hover:shadow-lg hover:shadow-teal-900/5"
+            className="group relative overflow-hidden border-white/10 bg-white/[0.04] p-5 shadow-none transition duration-300 hover:border-teal-400/30 hover:bg-white/[0.07]"
           >
             <div
               className={`pointer-events-none absolute inset-0 bg-gradient-to-br opacity-0 transition group-hover:opacity-100 ${accent}`}
               aria-hidden
             />
-            <div className="relative">
-              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-teal-600 text-white shadow-sm shadow-teal-600/25">
+            <div className="relative flex items-start gap-4">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-teal-400/10 text-teal-300 ring-1 ring-teal-400/20">
                 <Icon className="h-5 w-5" aria-hidden />
               </span>
-              <h3 className="mt-4 text-base font-semibold text-slate-900">
-                {title}
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-slate-600">
-                {text}
-              </p>
+              <div>
+                <h3 className="text-base font-semibold text-white">{title}</h3>
+                <p className="mt-1.5 text-sm leading-relaxed text-slate-400">
+                  {text}
+                </p>
+              </div>
             </div>
           </Card>
         ))}
+      </div>
       </div>
     </section>
   );

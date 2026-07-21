@@ -1,77 +1,95 @@
 import Link from "next/link";
-import { ArrowRight, FileOutput, ScanSearch, Upload } from "lucide-react";
+import {
+  ArrowRight,
+  FileOutput,
+  ScanSearch,
+  Stethoscope,
+  Upload,
+} from "lucide-react";
 
 const steps = [
   {
-    step: "01",
+    step: "1",
     icon: Upload,
-    title: "Upload study",
+    title: "Upload chest X-ray",
     description:
-      "Select a frontal chest radiograph (PNG/JPEG). Add an optional patient identifier for your records.",
+      "Add a frontal chest radiograph in PNG, JPEG, or DICOM format and select the patient record.",
   },
   {
-    step: "02",
+    step: "2",
     icon: ScanSearch,
-    title: "Run AI analysis",
+    title: "Validate & analyze",
     description:
-      "The model preprocesses, classifies, and generates a Grad-CAM heatmap-all in one request.",
+      "Quality checks run first; then the active condition model generates its screening result.",
   },
   {
-    step: "03",
+    step: "3",
     icon: FileOutput,
-    title: "Review & export",
+    title: "Review explainability",
     description:
-      "Inspect confidence, recommendations, scan history, and download a PDF report for documentation.",
+      "Inspect confidence interpretation, severity, suspicious regions, and the Grad-CAM overlay.",
+  },
+  {
+    step: "4",
+    icon: Stethoscope,
+    title: "Document next steps",
+    description:
+      "Add clinical notes, compare scans, and export a hospital-style PDF for professional review.",
   },
 ];
 
 export function HowItWorks() {
   return (
-    <section className="bg-slate-900 text-white">
+    <section className="bg-white">
       <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-teal-400">
+        <div className="mx-auto max-w-3xl text-center">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-teal-600">
               How it works
             </p>
-            <h2 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
-              Three steps from image to insight
+            <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+              From X-ray to review in four clear steps
             </h2>
-          </div>
+            <p className="mt-4 text-base text-slate-600">
+              A consistent workflow today, designed to support additional
+              validated condition modules in the future.
+            </p>
+        </div>
+
+        <div className="mt-6 flex justify-center">
           <Link
             href="/analyze"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-teal-300 transition hover:text-teal-200"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-teal-700 transition hover:text-teal-800"
           >
-            Try the analyzer
+            Open the current pneumonia analyzer
             <ArrowRight className="h-4 w-4" aria-hidden />
           </Link>
         </div>
 
-        <ol className="mt-12 grid gap-6 lg:grid-cols-3">
-          {steps.map(({ step, icon: Icon, title, description }, index) => (
+        <div className="relative mt-12">
+          <div
+            className="absolute left-[12.5%] right-[12.5%] top-7 hidden h-px bg-gradient-to-r from-transparent via-teal-200 to-transparent lg:block"
+            aria-hidden
+          />
+          <ol className="relative grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          {steps.map(({ step, icon: Icon, title, description }) => (
             <li
               key={step}
-              className="home-step-card relative rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm"
+              className="group text-center"
             >
-              {index < steps.length - 1 && (
-                <span
-                  className="pointer-events-none absolute -right-3 top-1/2 hidden h-px w-6 bg-gradient-to-r from-teal-500/50 to-transparent lg:block"
-                  aria-hidden
-                />
-              )}
-              <span className="text-3xl font-bold tabular-nums text-white/20">
+              <span className="relative mx-auto flex h-14 w-14 items-center justify-center rounded-full border-4 border-white bg-teal-50 text-lg font-bold text-teal-700 ring-1 ring-teal-100 transition group-hover:bg-teal-600 group-hover:text-white">
                 {step}
               </span>
-              <span className="mt-4 flex h-12 w-12 items-center justify-center rounded-xl bg-teal-500/20 text-teal-300 ring-1 ring-teal-400/30">
+              <span className="mx-auto mt-5 flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
                 <Icon className="h-6 w-6" aria-hidden />
               </span>
-              <h3 className="mt-4 text-lg font-semibold">{title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-slate-400">
+              <h3 className="mt-4 text-base font-semibold text-slate-900">{title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">
                 {description}
               </p>
             </li>
           ))}
-        </ol>
+          </ol>
+        </div>
       </div>
     </section>
   );

@@ -14,9 +14,9 @@ import { dashboardPathForRole } from "@/lib/auth-routes";
 import { PATIENT_REPORTS_PATH } from "@/lib/nav-links";
 
 const highlights = [
-  "CNN pneumonia screening",
-  "Grad-CAM explainability",
-  "Secure scan history & PDF reports",
+  "Pneumonia screening available now",
+  "Explainable regions, confidence & severity",
+  "Modular foundation for future conditions",
 ];
 
 export function HomeHero() {
@@ -46,17 +46,17 @@ export function HomeHero() {
             </p>
 
             <h1 className="mt-5 text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl lg:text-[3.25rem] lg:leading-[1.1]">
-              Clinical-grade{" "}
+              Explainable{" "}
               <span className="bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent">
-                X-ray intelligence
+                chest X-ray screening
               </span>{" "}
-              on your desk
+              in one workspace
             </h1>
 
             <p className="mt-5 text-base leading-relaxed text-slate-600 sm:text-lg">
-              Upload a chest radiograph, get an instant Normal vs Pneumonia
-              assessment with confidence scoring, visual explanations, and
-              exportable reports-running on your local stack.
+              Screen frontal chest radiographs for Normal versus Pneumonia
+              patterns today, with a modular platform designed to support
+              carefully validated condition models in the future.
             </p>
 
             <ul className="mt-6 space-y-2.5">

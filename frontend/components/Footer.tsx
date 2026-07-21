@@ -15,7 +15,9 @@ const accountLinksGuest = [
   { href: "/register", label: "Create account" },
 ];
 
-const accountLinksAuth = [{ href: PROFILE_PATH, label: "Profile" }];
+const accountLinksAuth = [
+  { href: PROFILE_PATH, label: "Profile" },
+];
 
 export function Footer() {
   const { isAuthenticated, isLoading, user } = useAuth();
@@ -26,7 +28,7 @@ export function Footer() {
     isAuthenticated && user?.role === "patient"
       ? PATIENT_NAV_LINKS.filter((l) => l.href !== PROFILE_PATH)
       : isAuthenticated && user?.role === "doctor"
-        ? DOCTOR_NAV_LINKS
+        ? DOCTOR_NAV_LINKS.filter((l) => l.href !== PROFILE_PATH)
         : PUBLIC_NAV_LINKS;
 
   return (
