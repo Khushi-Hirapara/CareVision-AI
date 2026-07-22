@@ -35,7 +35,7 @@ export function DoctorDashboard({ stats }: DoctorDashboardProps) {
       >
         <span className="flex items-center gap-2 text-sm font-semibold text-teal-800">
           <LayoutDashboard className="h-4 w-4" aria-hidden />
-          Open clinical workspace — manage patients & invites
+          Open dashboard — manage patients & invites
         </span>
         <ArrowRight className="h-4 w-4 text-teal-700" aria-hidden />
       </Link>

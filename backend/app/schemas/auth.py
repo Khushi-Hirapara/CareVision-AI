@@ -54,3 +54,9 @@ class LogoutRequest(BaseModel):
 
 class SsoExchangeRequest(BaseModel):
     code: str = Field(..., min_length=1, max_length=255)
+
+
+class SsoProvidersResponse(BaseModel):
+    google: bool
+    microsoft: bool
+

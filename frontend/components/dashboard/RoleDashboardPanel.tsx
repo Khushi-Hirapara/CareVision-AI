@@ -59,7 +59,7 @@ export function RoleDashboardPanel({ role }: RoleDashboardPanelProps) {
     };
   }, [role]);
 
-  const title = role === "doctor" ? "Clinical workspace" : "My health dashboard";
+  const title = role === "doctor" ? "Dashboard" : "My health dashboard";
   const description =
     role === "doctor"
       ? "Overview of your patients and chest X-ray analyses."
@@ -73,7 +73,7 @@ export function RoleDashboardPanel({ role }: RoleDashboardPanelProps) {
         </span>
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-teal-600">
-            {role === "doctor" ? "Clinical overview" : "Patient portal"}
+            {role === "doctor" ? "Doctor overview" : "Patient portal"}
           </p>
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
             {title}

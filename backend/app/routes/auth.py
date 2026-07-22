@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
-from app.core.config import settings
+from app.core.config import get_settings, settings
 from app.core.deps import get_current_user
 from app.core.oauth import get_oauth_client
 from app.core.security import create_access_token
@@ -22,6 +22,7 @@ from app.schemas.auth import (
     ResendVerificationRequest,
     ResetPasswordRequest,
     SsoExchangeRequest,
+    SsoProvidersResponse,
     Token,
     VerifyEmailRequest,
 )
@@ -228,16 +229,61 @@ def logout(
     return MessageResponse(message="Logged out.")
 
 
-def _safe_next_path(value: str | None) -> str:
+def _safe_next_path(value: str | None) -> str | None:
+    """Return a same-origin relative path, or None when absent/invalid."""
     if value and value.startswith("/") and not value.startswith("//"):
         return value
-    return "/"
+    return None
 
 
 def _sso_frontend_redirect(**params: str) -> RedirectResponse:
-    query = urlencode(params)
-    url = f"{settings.frontend_url.rstrip('/')}/auth/callback?{query}"
+    cleaned = {key: value for key, value in params.items() if value}
+    query = urlencode(cleaned)
+    url = f"{settings.frontend_url.rstrip('/')}/auth/callback"
+    if query:
+        url = f"{url}?{query}"
     return RedirectResponse(url=url, status_code=status.HTTP_302_FOUND)
+
+
+def _extract_sso_identity(provider: str, userinfo: dict) -> tuple[str, str, str]:
+    """Validate provider claims and return subject, email, display name."""
+    subject = str(userinfo.get("sub") or "").strip()
+    email = str(userinfo.get("email") or "").strip()
+    preferred = str(userinfo.get("preferred_username") or "").strip()
+    name = str(userinfo.get("name") or "").strip()
+
+    if not subject:
+        raise ValueError("The identity provider did not return a user subject.")
+
+    if provider == "google":
+        if userinfo.get("email_verified") is not True:
+            raise ValueError("Google did not provide a verified email address.")
+        if not email:
+            raise ValueError("Google did not provide an email address.")
+    elif provider == "microsoft":
+        # Prefer the email claim; fall back to preferred_username when it is an email.
+        if not email and preferred and "@" in preferred:
+            email = preferred
+        if not email:
+            raise ValueError("Microsoft did not provide an email address.")
+        # When Microsoft returns email_verified=false, reject the sign-in.
+        if userinfo.get("email_verified") is False:
+            raise ValueError("Microsoft did not provide a verified email address.")
+    else:
+        raise ValueError("Unsupported SSO provider.")
+
+    display_name = name or email.split("@", 1)[0]
+    return subject, email, display_name
+
+
+@router.get("/sso/providers", response_model=SsoProvidersResponse)
+def list_sso_providers() -> SsoProvidersResponse:
+    """Public flags for which SSO providers are configured."""
+    current = get_settings()
+    return SsoProvidersResponse(
+        google=current.google_sso_configured,
+        microsoft=current.microsoft_sso_configured,
+    )
 
 
 @router.get("/sso/{provider}/login")
@@ -259,10 +305,13 @@ async def sso_login(
             detail=f"{provider.title()} SSO is not configured.",
         )
 
-    request.session["sso_next"] = _safe_next_path(next_path)
-    redirect_uri = (
-        f"{settings.backend_url.rstrip('/')}/auth/sso/{provider}/callback"
-    )
+    safe_next = _safe_next_path(next_path)
+    if safe_next:
+        request.session["sso_next"] = safe_next
+    else:
+        request.session.pop("sso_next", None)
+
+    redirect_uri = get_settings().sso_redirect_uri(provider)
     return await client.authorize_redirect(request, redirect_uri)
 
 
@@ -282,18 +331,10 @@ async def sso_callback(
         userinfo = token.get("userinfo")
         if not userinfo:
             userinfo = await client.userinfo(token=token)
+        if not isinstance(userinfo, dict):
+            raise ValueError("The identity provider returned an invalid profile.")
 
-        subject = str(userinfo.get("sub") or "")
-        email = str(
-            userinfo.get("email")
-            or userinfo.get("preferred_username")
-            or "",
-        )
-        name = str(userinfo.get("name") or email.split("@", 1)[0])
-
-        if provider == "google" and userinfo.get("email_verified") is not True:
-            raise ValueError("Google did not provide a verified email address.")
-
+        subject, email, name = _extract_sso_identity(provider, userinfo)
         user = get_or_create_sso_user(
             db,
             provider=provider,
@@ -311,7 +352,9 @@ async def sso_callback(
         return _sso_frontend_redirect(error="SSO sign-in failed. Please try again.")
 
     next_path = _safe_next_path(request.session.pop("sso_next", None))
-    return _sso_frontend_redirect(code=code, next=next_path)
+    if next_path:
+        return _sso_frontend_redirect(code=code, next=next_path)
+    return _sso_frontend_redirect(code=code)
 
 
 @router.post("/sso/exchange", response_model=Token)

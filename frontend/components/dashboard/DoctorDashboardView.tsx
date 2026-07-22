@@ -190,7 +190,11 @@ export function DoctorDashboardView() {
       <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-4 py-16 sm:px-6">
         <ErrorAlert
           title="Dashboard unavailable"
-          message={`${error ?? "Unknown error"} Ensure the backend is running.`}
+          message={
+            error
+              ? `${error} Ensure the backend is running on port 8001.`
+              : "Ensure the backend is running on port 8001."
+          }
         />
       </div>
     );
@@ -216,10 +220,10 @@ export function DoctorDashboardView() {
           <div className="max-w-2xl">
             <span className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs font-semibold backdrop-blur-sm">
               <Sparkles className="h-3.5 w-3.5" aria-hidden />
-              AI-assisted clinical workspace
+              AI-assisted doctor dashboard
             </span>
             <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
-              Clinical Workspace
+              Dashboard
             </h1>
             <p className="mt-3 text-sm leading-relaxed text-teal-50/95 sm:text-base">
               Invite patients to the portal, manage active patients, and review AI chest

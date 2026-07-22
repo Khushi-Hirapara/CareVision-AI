@@ -10,6 +10,7 @@ import {
 } from "@/components/auth/AuthFormCard";
 import { GuestOnly } from "@/components/auth/GuestOnly";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { SsoProviderButtons } from "@/components/auth/SsoProviderButtons";
 import { AuthApiError } from "@/lib/auth";
 import { DOCTOR_DASHBOARD_PATH } from "@/lib/auth-routes";
 import { ErrorAlert } from "@/components/ui/ErrorAlert";
@@ -134,6 +135,8 @@ function RegisterForm() {
           )}
         </button>
       </form>
+
+      <SsoProviderButtons />
 
       <p className="mt-4 text-center text-xs text-slate-500">
         <Link href="/" className="text-teal-700 hover:text-teal-800">

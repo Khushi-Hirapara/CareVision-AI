@@ -66,16 +66,54 @@ class Settings(BaseSettings):
     oauth_session_secret: str | None = Field(default=None, alias="OAUTH_SESSION_SECRET")
     google_client_id: str | None = Field(default=None, alias="GOOGLE_CLIENT_ID")
     google_client_secret: str | None = Field(default=None, alias="GOOGLE_CLIENT_SECRET")
+    google_redirect_uri: str | None = Field(
+        default=None,
+        alias="GOOGLE_REDIRECT_URI",
+        description="Must match Google Cloud OAuth authorized redirect URI.",
+    )
     microsoft_client_id: str | None = Field(default=None, alias="MICROSOFT_CLIENT_ID")
     microsoft_client_secret: str | None = Field(
         default=None,
         alias="MICROSOFT_CLIENT_SECRET",
     )
     microsoft_tenant: str = Field(default="common", alias="MICROSOFT_TENANT")
+    microsoft_redirect_uri: str | None = Field(
+        default=None,
+        alias="MICROSOFT_REDIRECT_URI",
+        description="Must match Azure Entra ID redirect URI.",
+    )
 
     @property
     def session_secret(self) -> str:
         return self.oauth_session_secret or self.jwt_secret_key
+
+    @property
+    def google_sso_configured(self) -> bool:
+        return bool(
+            (self.google_client_id or "").strip()
+            and (self.google_client_secret or "").strip()
+        )
+
+    @property
+    def microsoft_sso_configured(self) -> bool:
+        return bool(
+            (self.microsoft_client_id or "").strip()
+            and (self.microsoft_client_secret or "").strip()
+        )
+
+    def sso_redirect_uri(self, provider: str) -> str:
+        """Return the OAuth redirect URI registered with the identity provider."""
+        if provider == "google":
+            configured = (self.google_redirect_uri or "").strip()
+            if configured:
+                return configured
+            return f"{self.backend_url.rstrip('/')}/auth/sso/google/callback"
+        if provider == "microsoft":
+            configured = (self.microsoft_redirect_uri or "").strip()
+            if configured:
+                return configured
+            return f"{self.backend_url.rstrip('/')}/auth/sso/microsoft/callback"
+        raise ValueError(f"Unsupported SSO provider: {provider}")
 
     @model_validator(mode="before")
     @classmethod
