@@ -24,7 +24,7 @@ export function HomeHero() {
   const { isAuthenticated, isLoading, user } = useAuth();
 
   return (
-    <section className="home-hero relative overflow-hidden">
+    <section className="home-hero relative min-h-[70vh] overflow-hidden">
       <HomeHeroBackground />
 
       <div className="relative z-10 mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20 lg:py-24">

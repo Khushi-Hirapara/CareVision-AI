@@ -1,65 +1,97 @@
 "use client";
 
-import { useEffect, useRef, type CSSProperties } from "react";
+import { useEffect, useRef } from "react";
 
 /**
  * Ambient hero background with soft cursor-reactive pulse rings.
+ * Rings stay visible at rest and gently follow the pointer.
  */
 export function HomeHeroBackground() {
   const rootRef = useRef<HTMLDivElement>(null);
+  const cursorPulseRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
-  const targetRef = useRef({ x: 0.72, y: 0.28 });
-  const currentRef = useRef({ x: 0.72, y: 0.28 });
+  const targetRef = useRef({ x: 0, y: 0 });
+  const currentRef = useRef({ x: 0, y: 0 });
+  const readyRef = useRef(false);
 
   useEffect(() => {
     const root = rootRef.current;
-    if (!root) return;
-
-    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (media.matches) return;
+    const pulse = cursorPulseRef.current;
+    if (!root || !pulse) return;
 
     const hero = root.closest(".home-hero");
     if (!(hero instanceof HTMLElement)) return;
 
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+    const placeDefault = () => {
+      const rect = hero.getBoundingClientRect();
+      // Left-center area — open space beside the dashboard preview.
+      targetRef.current = {
+        x: rect.width * 0.28,
+        y: rect.height * 0.42,
+      };
+      if (!readyRef.current) {
+        currentRef.current = { ...targetRef.current };
+        readyRef.current = true;
+      }
+    };
+
+    placeDefault();
+
     const onMove = (event: PointerEvent) => {
       const rect = hero.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0) return;
+      const inside =
+        event.clientX >= rect.left &&
+        event.clientX <= rect.right &&
+        event.clientY >= rect.top &&
+        event.clientY <= rect.bottom;
+
+      if (!inside) {
+        placeDefault();
+        root.classList.remove("is-cursor-active");
+        return;
+      }
+
       targetRef.current = {
-        x: Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width)),
-        y: Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height)),
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
       };
+      root.classList.add("is-cursor-active");
     };
 
     const onLeave = () => {
-      targetRef.current = { x: 0.72, y: 0.28 };
+      placeDefault();
+      root.classList.remove("is-cursor-active");
     };
 
     const tick = () => {
-      const current = currentRef.current;
-      const target = targetRef.current;
-      // Soft lag so rings follow the cursor smoothly, not rigidly.
-      current.x += (target.x - current.x) * 0.075;
-      current.y += (target.y - current.y) * 0.075;
+      if (!reduceMotion.matches) {
+        const current = currentRef.current;
+        const target = targetRef.current;
+        current.x += (target.x - current.x) * 0.1;
+        current.y += (target.y - current.y) * 0.1;
 
-      const dx = target.x - current.x;
-      const dy = target.y - current.y;
-      const speed = Math.min(1, Math.hypot(dx, dy) * 14);
+        const dx = target.x - current.x;
+        const dy = target.y - current.y;
+        const speed = Math.min(1, Math.hypot(dx, dy) / 40);
 
-      root.style.setProperty("--mx", current.x.toFixed(4));
-      root.style.setProperty("--my", current.y.toFixed(4));
-      root.style.setProperty("--mspeed", speed.toFixed(3));
-      root.classList.toggle("is-cursor-active", speed > 0.02);
+        pulse.style.transform = `translate(${current.x}px, ${current.y}px) translate(-50%, -50%) scale(${(0.95 + speed * 0.28).toFixed(3)})`;
+        pulse.style.opacity = String(0.85 + speed * 0.15);
+      }
 
       rafRef.current = window.requestAnimationFrame(tick);
     };
 
-    hero.addEventListener("pointermove", onMove, { passive: true });
+    window.addEventListener("pointermove", onMove, { passive: true });
     hero.addEventListener("pointerleave", onLeave);
+    window.addEventListener("resize", placeDefault);
     rafRef.current = window.requestAnimationFrame(tick);
 
     return () => {
-      hero.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointermove", onMove);
       hero.removeEventListener("pointerleave", onLeave);
+      window.removeEventListener("resize", placeDefault);
       if (rafRef.current != null) {
         window.cancelAnimationFrame(rafRef.current);
       }
@@ -67,18 +99,7 @@ export function HomeHeroBackground() {
   }, []);
 
   return (
-    <div
-      ref={rootRef}
-      className="home-hero-bg"
-      style={
-        {
-          ["--mx"]: 0.72,
-          ["--my"]: 0.28,
-          ["--mspeed"]: 0,
-        } as CSSProperties
-      }
-      aria-hidden
-    >
+    <div ref={rootRef} className="home-hero-bg" aria-hidden>
       <div className="home-hero-bg__base" />
       <div className="home-hero-bg__mesh" />
       <div className="home-hero-bg__grid" />
@@ -87,15 +108,17 @@ export function HomeHeroBackground() {
       <span className="home-hero-bg__orb home-hero-bg__orb--b" />
       <span className="home-hero-bg__orb home-hero-bg__orb--c" />
 
-      {/* Cursor-following pulse */}
-      <div className="home-hero-bg__pulse home-hero-bg__pulse--cursor">
+      {/* Cursor-following pulse — positioned via JS for reliable visibility */}
+      <div
+        ref={cursorPulseRef}
+        className="home-hero-bg__pulse home-hero-bg__pulse--cursor"
+      >
         <span className="home-hero-bg__pulse-core" />
         <span className="home-hero-bg__ring home-hero-bg__ring--1" />
         <span className="home-hero-bg__ring home-hero-bg__ring--2" />
         <span className="home-hero-bg__ring home-hero-bg__ring--3" />
       </div>
 
-      {/* Ambient secondary pulses */}
       <div className="home-hero-bg__pulse home-hero-bg__pulse--secondary">
         <span className="home-hero-bg__pulse-core home-hero-bg__pulse-core--sm" />
         <span className="home-hero-bg__ring home-hero-bg__ring--1" />
