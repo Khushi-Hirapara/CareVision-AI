@@ -9,6 +9,7 @@ import {
   UserPlus,
 } from "lucide-react";
 import { DashboardPreview } from "@/components/home/DashboardPreview";
+import { HomeHeroBackground } from "@/components/home/HomeHeroBackground";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { dashboardPathForRole } from "@/lib/auth-routes";
 import { PATIENT_REPORTS_PATH } from "@/lib/nav-links";
@@ -24,20 +25,9 @@ export function HomeHero() {
 
   return (
     <section className="home-hero relative overflow-hidden">
-      <div
-        className="pointer-events-none absolute inset-0 bg-gradient-to-br from-teal-50 via-white to-cyan-50/40"
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute -right-32 top-0 h-[480px] w-[480px] rounded-full bg-teal-200/30 blur-3xl"
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute -left-24 bottom-0 h-80 w-80 rounded-full bg-cyan-200/25 blur-3xl"
-        aria-hidden
-      />
+      <HomeHeroBackground />
 
-      <div className="relative mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20 lg:py-24">
+      <div className="relative z-10 mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20 lg:py-24">
         <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
           <div className="max-w-xl">
             <p className="home-hero-badge inline-flex items-center gap-2 rounded-full border border-teal-200/80 bg-white/80 px-3.5 py-1.5 text-xs font-semibold text-teal-800 shadow-sm backdrop-blur-sm">
