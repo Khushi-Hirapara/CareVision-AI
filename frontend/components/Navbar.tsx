@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Activity, LogIn, UserPlus } from "lucide-react";
 import { UserMenu } from "@/components/auth/UserMenu";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { navLinksForRole, type NavLinkItem } from "@/lib/nav-links";
 import { cn } from "@/lib/utils";
 
@@ -30,13 +31,18 @@ function NavLink({
           ? "shrink-0 gap-1.5 rounded-lg px-2.5 py-2 text-xs"
           : "rounded-lg px-3 py-2 text-sm",
         active
-          ? "bg-teal-50 text-teal-800"
+          ? "bg-teal-50 text-teal-800 dark:bg-teal-950/60 dark:text-teal-300"
           : compact
-            ? "text-slate-600"
-            : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
+            ? "text-slate-600 dark:text-slate-300"
+            : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white",
       )}
     >
-      <Icon className={compact ? "h-3.5 w-3.5" : "h-4 w-4"} aria-hidden />
+      <Icon
+        className={compact ? "h-3.5 w-3.5" : "h-4 w-4"}
+        strokeWidth={2.25}
+        absoluteStrokeWidth
+        aria-hidden
+      />
       <span className="whitespace-nowrap">{label}</span>
     </Link>
   );
@@ -56,22 +62,22 @@ export function Navbar() {
   const showMobileNav = !isAuthPage && isAuthenticated && navLinks.length > 0;
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
+    <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur-md dark:border-slate-700/80 dark:bg-slate-950/90">
+      <div className="relative flex h-16 w-full items-center justify-between gap-3 px-3 sm:px-5 lg:px-6">
         <Link
           href="/"
           className="flex shrink-0 items-center gap-2.5"
           aria-label="CareVision AI — go to landing page"
           title="Go to landing page"
         >
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-teal-600 text-white shadow-sm">
-            <Activity className="h-5 w-5" aria-hidden />
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-teal-500 to-cyan-600 text-white shadow-md shadow-teal-600/25 ring-1 ring-teal-400/30">
+            <Activity className="h-5 w-5" strokeWidth={2.25} aria-hidden />
           </span>
           <div className="leading-tight">
-            <span className="block text-sm font-semibold text-slate-900">
+            <span className="block text-sm font-semibold text-slate-900 dark:text-slate-100">
               CareVision AI
             </span>
-            <span className="hidden text-xs text-slate-500 sm:block">
+            <span className="hidden text-xs text-slate-500 dark:text-slate-400 sm:block">
               Chest X-Ray Analysis
             </span>
           </div>
@@ -79,25 +85,25 @@ export function Navbar() {
 
         {showDesktopNav ? (
           <nav
-            className="hidden min-w-0 flex-1 items-center justify-center gap-1 md:flex"
+            className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 md:flex"
             aria-label="Main"
           >
             {navLinks.map((link) => (
               <NavLink key={link.href} {...link} pathname={pathname} />
             ))}
           </nav>
-        ) : (
-          <div className="hidden flex-1 md:block" aria-hidden />
-        )}
+        ) : null}
 
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          <ThemeToggle />
+
           {!isLoading && isAuthenticated && <UserMenu />}
 
           {!isLoading && !isAuthenticated && !isAuthPage && (
             <>
               <Link
                 href="/login"
-                className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 sm:text-sm"
+                className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800 sm:text-sm"
               >
                 <LogIn className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden />
                 Sign in
@@ -116,7 +122,7 @@ export function Navbar() {
 
       {showMobileNav ? (
         <nav
-          className="flex items-center gap-0.5 overflow-x-auto border-t border-slate-100 px-4 pb-2 md:hidden"
+          className="flex items-center gap-0.5 overflow-x-auto border-t border-slate-100 px-4 pb-2 dark:border-slate-800 md:hidden"
           aria-label="Main mobile"
         >
           {navLinks.map((link) => (

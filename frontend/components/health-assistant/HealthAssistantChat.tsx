@@ -206,7 +206,7 @@ export function HealthAssistantChat({
             <Bot className="h-5 w-5" aria-hidden />
           </span>
           <div className="min-w-0">
-            <h2 className="truncate text-base font-semibold tracking-tight text-slate-900 sm:text-lg">
+            <h2 className="truncate text-base font-semibold tracking-tight text-slate-900 sm:text-lg dark:text-white">
               CareVision AI Health Assistant
             </h2>
             <p className="mt-0.5 text-sm text-slate-500">
@@ -217,15 +217,15 @@ export function HealthAssistantChat({
         <button
           type="button"
           onClick={() => setSettingsOpen(true)}
-          className="rounded-xl border border-slate-200/90 bg-white/80 p-2 text-slate-500 shadow-sm transition hover:border-teal-200 hover:text-teal-700"
+          className="rounded-xl border border-slate-200/90 bg-white/80 p-2 text-slate-500 shadow-sm transition hover:border-teal-200 hover:text-teal-700 dark:border-slate-600 dark:bg-slate-800/80 dark:text-slate-400 dark:hover:border-teal-500/40 dark:hover:text-teal-300"
           aria-label="Open assistant settings"
         >
           <Settings2 className="h-4 w-4" />
         </button>
       </header>
 
-      <div className="border-b border-slate-100/80 px-4 py-3 sm:px-5">
-        <p className="rounded-xl border border-amber-200/80 bg-amber-50/90 px-3 py-2 text-xs leading-relaxed text-amber-950">
+      <div className="border-b border-slate-100/80 px-4 py-3 sm:px-5 dark:border-slate-700/80">
+        <p className="rounded-xl border border-amber-200/80 bg-amber-50/90 px-3 py-2 text-xs leading-relaxed text-amber-950 dark:border-amber-700/50 dark:bg-amber-950/40 dark:text-amber-100">
           {AI_CHAT_DISCLAIMER}
         </p>
       </div>

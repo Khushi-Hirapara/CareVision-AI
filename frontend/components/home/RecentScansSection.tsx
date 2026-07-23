@@ -57,7 +57,7 @@ export function RecentScansSection() {
 
   return (
     <section className="border-t border-slate-200/80 bg-slate-50/50">
-      <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+      <div className="w-full px-3 py-16 sm:px-5 sm:py-20 lg:px-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-teal-600">

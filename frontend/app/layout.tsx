@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { DM_Sans } from "next/font/google";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import { RoleRouteGuard } from "@/components/auth/RoleRouteGuard";
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
 import "./globals.css";
@@ -27,15 +28,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${dmSans.variable} h-full`}>
-      <body className="flex min-h-full flex-col antialiased">
-        <AuthProvider>
-          <RoleRouteGuard>
-            <Navbar />
-            <main className="flex-1">{children}</main>
-            <Footer />
-          </RoleRouteGuard>
-        </AuthProvider>
+    <html lang="en" className={`${dmSans.variable} h-full`} suppressHydrationWarning>
+      <body className="flex min-h-full flex-col bg-background text-foreground antialiased">
+        <ThemeProvider>
+          <AuthProvider>
+            <RoleRouteGuard>
+              <Navbar />
+              <main className="flex-1">{children}</main>
+              <Footer />
+            </RoleRouteGuard>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

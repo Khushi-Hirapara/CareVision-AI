@@ -1,29 +1,30 @@
 import { Cpu, Lock, Stethoscope, Zap } from "lucide-react";
+import { FeatureIcon } from "@/components/ui/FeatureIcon";
 
 const items = [
-  { icon: Zap, label: "Sub-second inference", sub: "Local TensorFlow model" },
-  { icon: Stethoscope, label: "Decision support", sub: "Not a diagnosis device" },
-  { icon: Lock, label: "Your data, your server", sub: "Per-user scan isolation" },
-  { icon: Cpu, label: "Explainable AI", sub: "Grad-CAM heatmaps" },
+  { icon: Zap, tone: "amber" as const, label: "Sub-second inference", sub: "Local TensorFlow model" },
+  { icon: Stethoscope, tone: "teal" as const, label: "Decision support", sub: "Not a diagnosis device" },
+  { icon: Lock, tone: "emerald" as const, label: "Your data, your server", sub: "Per-user scan isolation" },
+  { icon: Cpu, tone: "cyan" as const, label: "Explainable AI", sub: "Grad-CAM heatmaps" },
 ];
 
 export function HomeTrustBar() {
   return (
     <section
-      className="border-y border-slate-200/80 bg-white/70 backdrop-blur-sm"
+      className="border-y border-slate-200/80 bg-white/70 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-950/60"
       aria-label="Platform highlights"
     >
-      <div className="mx-auto grid max-w-6xl grid-cols-2 gap-px bg-slate-200/80 sm:grid-cols-4">
-        {items.map(({ icon: Icon, label, sub }) => (
+      <div className="mx-auto grid w-full grid-cols-2 gap-px bg-slate-200/80 dark:bg-slate-800 sm:grid-cols-4">
+        {items.map(({ icon, tone, label, sub }) => (
           <div
             key={label}
-            className="flex flex-col items-center gap-2 bg-white px-4 py-6 text-center sm:py-7"
+            className="group flex flex-col items-center gap-3 bg-white px-4 py-7 text-center dark:bg-slate-950 sm:py-8"
           >
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 text-teal-700 ring-1 ring-teal-100">
-              <Icon className="h-5 w-5" aria-hidden />
-            </span>
-            <p className="text-sm font-semibold text-slate-900">{label}</p>
-            <p className="text-xs text-slate-500">{sub}</p>
+            <FeatureIcon icon={icon} tone={tone} size="md" />
+            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+              {label}
+            </p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{sub}</p>
           </div>
         ))}
       </div>

@@ -112,7 +112,7 @@ export function PatientsManagementView() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-10 sm:px-6">
+      <div className="page-content flex flex-1 flex-col">
         <LoadingPanel message="Loading patients…" />
       </div>
     );
@@ -120,14 +120,14 @@ export function PatientsManagementView() {
 
   if (error) {
     return (
-      <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:px-6">
+      <div className="page-content flex-1">
         <ErrorAlert title="Patients unavailable" message={error} />
       </div>
     );
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 px-4 py-8 sm:px-6 sm:py-10">
+    <div className="page-content flex flex-1 flex-col gap-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <PageHeader
           title="Patients"

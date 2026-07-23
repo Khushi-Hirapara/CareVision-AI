@@ -59,21 +59,21 @@ export function RoleDashboardPanel({ role }: RoleDashboardPanelProps) {
     };
   }, [role]);
 
-  const title = role === "doctor" ? "Clinical workspace" : "My health dashboard";
+  const title = role === "doctor" ? "Dashboard" : "My health dashboard";
   const description =
     role === "doctor"
       ? "Overview of your patients and chest X-ray analyses."
       : "Your personal scan history and latest results.";
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
+    <div className="page-content">
       <div className="flex items-start gap-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-700">
           <LayoutDashboard className="h-5 w-5" aria-hidden />
         </span>
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-teal-600">
-            {role === "doctor" ? "Clinical overview" : "Patient portal"}
+            {role === "doctor" ? "Doctor overview" : "Patient portal"}
           </p>
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
             {title}

@@ -131,7 +131,7 @@ function AnalyzePageContent() {
 
   return (
     <div className="page-shell">
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
+      <div className="page-content">
         <PageHeader
           title="Analyze X-Ray"
           description="Select an accepted patient, upload a chest radiograph, and run AI screening. Results are saved to their profile and visible on the patient portal."
@@ -148,7 +148,7 @@ function AnalyzePageContent() {
         <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
           <div className="space-y-4">
             <Card>
-              <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-900">
+              <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
                 <Sparkles className="h-4 w-4 text-teal-600" aria-hidden />
                 Patient &amp; study
               </h2>
@@ -156,7 +156,7 @@ function AnalyzePageContent() {
               {patientsLoading ? (
                 <LoadingPanel message="Loading accepted patients…" className="mb-4 py-6" />
               ) : patients.length === 0 ? (
-                <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-amber-900">
+                <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-amber-900 dark:border-amber-700/50 dark:bg-amber-950/40 dark:text-amber-100">
                   <p className="font-medium">No accepted patients yet</p>
                   <p className="mt-1 text-amber-800/90">
                     Invite a patient and wait until they accept the email invitation.
@@ -187,7 +187,7 @@ function AnalyzePageContent() {
                       setSelectedPatientId(e.target.value);
                       setAnalyzeError(null);
                     }}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-500/20 disabled:bg-slate-50"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-500/20 disabled:bg-slate-50 dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-teal-500 dark:disabled:bg-slate-900"
                   >
                     <option value="">Select patient…</option>
                     {patients.map((patient) => (
@@ -227,7 +227,7 @@ function AnalyzePageContent() {
                 type="button"
                 disabled={!canAnalyze}
                 onClick={() => void handleAnalyze()}
-                className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-teal-600 px-4 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+                className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-teal-600 px-4 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none dark:shadow-teal-500/20 dark:hover:bg-teal-500 dark:focus:ring-offset-slate-900 dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
               >
                 {isAnalyzing ? (
                   <>
@@ -248,7 +248,7 @@ function AnalyzePageContent() {
           </div>
 
           <div className="lg:sticky lg:top-20">
-            <h2 className="mb-4 text-sm font-semibold text-slate-900">Results</h2>
+            <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-white">Results</h2>
 
             {isAnalyzing && <AnalysisLoadingState />}
 
@@ -309,7 +309,7 @@ export default function AnalyzePage() {
     <Suspense
       fallback={
         <div className="page-shell">
-          <div className="mx-auto max-w-6xl px-4 py-16">
+          <div className="page-content">
             <LoadingPanel message="Loading analyzer…" />
           </div>
         </div>

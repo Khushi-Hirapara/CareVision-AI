@@ -56,17 +56,17 @@ export function UserMenu() {
         aria-haspopup="menu"
         aria-label="User menu"
         className={cn(
-          "inline-flex max-w-[200px] items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 sm:px-3",
-          open && "border-teal-200 bg-teal-50/50",
+          "inline-flex max-w-[200px] items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 sm:px-3 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700",
+          open && "border-teal-200 bg-teal-50/50 dark:border-teal-700 dark:bg-teal-950/40",
         )}
       >
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-teal-100 text-teal-800">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200">
           <User className="h-3.5 w-3.5" aria-hidden />
         </span>
         <span className="hidden truncate sm:inline">{user.name}</span>
         <ChevronDown
           className={cn(
-            "h-4 w-4 shrink-0 text-slate-500 transition",
+            "h-4 w-4 shrink-0 text-slate-500 transition dark:text-slate-400",
             open && "rotate-180",
           )}
           aria-hidden
@@ -76,7 +76,7 @@ export function UserMenu() {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 z-50 mt-2 w-52 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg"
+          className="absolute right-0 z-50 mt-2 w-52 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-600 dark:bg-slate-900"
         >
           <div className="border-b border-slate-100 px-3 py-2.5 sm:hidden">
             <p className="truncate text-sm font-semibold text-slate-900">
@@ -124,7 +124,7 @@ export function UserMenu() {
               setOpen(false);
               void logout();
             }}
-            className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-medium text-rose-700 transition hover:bg-rose-50"
+            className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-medium text-rose-700 transition hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/50"
           >
             <LogOut className="h-4 w-4" aria-hidden />
             Logout

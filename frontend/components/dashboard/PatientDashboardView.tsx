@@ -28,7 +28,7 @@ import { formatDate, formatPercent } from "@/lib/utils";
 
 function DashboardSkeleton() {
   return (
-    <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6 sm:py-10 lg:py-12">
+    <div className="page-content flex-1">
       <div className="h-40 animate-pulse rounded-3xl bg-slate-200/70" />
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {Array.from({ length: 5 }).map((_, i) => (
@@ -74,7 +74,7 @@ export function PatientDashboardView() {
 
   if (error || !stats) {
     return (
-      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-4 py-16 sm:px-6">
+      <div className="page-content flex flex-1 flex-col justify-center">
         <ErrorAlert
           title="Dashboard unavailable"
           message={`${error ?? "Unknown error"} Ensure the backend is running.`}
@@ -92,7 +92,7 @@ export function PatientDashboardView() {
   const welcomeName = user?.name?.trim() || "there";
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 px-4 py-8 sm:gap-10 sm:px-6 sm:py-10 lg:gap-12 lg:py-12">
+    <div className="page-content flex flex-1 flex-col gap-8 sm:gap-10 lg:gap-12">
       {/* Welcome */}
       <section className="relative overflow-hidden rounded-2xl border border-cyan-200/50 bg-gradient-to-br from-cyan-600 via-teal-600 to-teal-800 px-6 py-8 text-white shadow-xl shadow-teal-900/15 sm:rounded-3xl sm:px-8 sm:py-10">
         <div

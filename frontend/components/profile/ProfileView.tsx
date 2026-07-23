@@ -60,25 +60,25 @@ function StatCard({
   accent?: "teal" | "rose" | "slate";
 }) {
   const accentClasses = {
-    teal: "from-teal-500/10 to-cyan-500/5 ring-teal-100",
-    rose: "from-rose-500/10 to-orange-500/5 ring-rose-100",
-    slate: "from-slate-500/8 to-slate-400/5 ring-slate-200",
+    teal: "from-teal-50 to-cyan-50/80 ring-teal-100 dark:from-teal-500/15 dark:to-cyan-500/10 dark:ring-teal-500/25",
+    rose: "from-rose-50 to-orange-50/60 ring-rose-100 dark:from-rose-500/15 dark:to-orange-500/10 dark:ring-rose-500/25",
+    slate: "from-slate-50 to-slate-100/60 ring-slate-200 dark:from-slate-800/80 dark:to-slate-900 dark:ring-slate-600/50",
   }[accent ?? "slate"];
 
   return (
     <div
       className={cn(
-        "rounded-2xl bg-gradient-to-br p-4 ring-1 ring-inset",
+        "rounded-2xl border border-transparent bg-gradient-to-br p-4 ring-1 ring-inset dark:border-slate-700/40",
         accentClasses,
       )}
     >
-      <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
         {label}
       </p>
-      <p className="mt-1 text-2xl font-bold tabular-nums tracking-tight text-slate-900">
+      <p className="mt-1 text-2xl font-bold tabular-nums tracking-tight text-slate-900 dark:text-white">
         {value}
       </p>
-      {sub ? <p className="mt-0.5 text-xs text-slate-500">{sub}</p> : null}
+      {sub ? <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{sub}</p> : null}
     </div>
   );
 }
@@ -95,17 +95,17 @@ function DetailRow({
   mono?: boolean;
 }) {
   return (
-    <div className="flex gap-4 rounded-xl border border-slate-100 bg-slate-50/60 px-4 py-3.5 transition hover:border-teal-100 hover:bg-teal-50/30">
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-teal-700 shadow-sm ring-1 ring-slate-100">
+    <div className="flex gap-4 rounded-xl border border-slate-100 bg-slate-50/60 px-4 py-3.5 transition hover:border-teal-100 hover:bg-teal-50/30 dark:border-slate-700 dark:bg-slate-800/60 dark:hover:border-teal-700/50 dark:hover:bg-teal-950/30">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-teal-700 shadow-sm ring-1 ring-slate-100 dark:bg-slate-900 dark:text-teal-300 dark:ring-slate-600">
         <Icon className="h-4 w-4" aria-hidden />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
           {label}
         </p>
         <p
           className={cn(
-            "mt-0.5 text-sm font-semibold text-slate-900 sm:text-base",
+            "mt-0.5 text-sm font-semibold text-slate-900 sm:text-base dark:text-slate-100",
             mono && "font-mono text-xs sm:text-sm",
           )}
         >
@@ -232,7 +232,7 @@ export function ProfileView({ user: initialUser }: { user: AuthUser }) {
 
   return (
     <div className="page-shell">
-      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-10">
+      <div className="page-content">
         {/* Hero */}
         <div className="profile-hero relative overflow-hidden rounded-3xl border border-teal-200/40 bg-gradient-to-br from-teal-600 via-teal-600 to-cyan-700 px-6 py-8 text-white shadow-lg sm:px-10 sm:py-10">
           <div
@@ -391,8 +391,8 @@ export function ProfileView({ user: initialUser }: { user: AuthUser }) {
 
           {/* Sidebar */}
           <div className="flex flex-col gap-6 lg:col-span-2">
-            <Card className="bg-gradient-to-b from-white to-slate-50/80">
-              <h2 className="text-sm font-semibold text-slate-900">
+            <Card className="bg-gradient-to-b from-white to-slate-50/80 dark:from-slate-900 dark:to-slate-950 dark:ring-1 dark:ring-teal-500/15">
+              <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
                 Quick links
               </h2>
               <ul className="mt-4 space-y-2">
@@ -400,21 +400,21 @@ export function ProfileView({ user: initialUser }: { user: AuthUser }) {
                   <li key={href}>
                     <Link
                       href={href}
-                      className="group flex items-center gap-3 rounded-xl border border-slate-100 bg-white px-3 py-3 transition hover:border-teal-200 hover:shadow-sm"
+                      className="group flex items-center gap-3 rounded-xl border border-slate-100 bg-white px-3 py-3 transition hover:border-teal-200 hover:shadow-sm dark:border-slate-700 dark:bg-slate-800/70 dark:hover:border-teal-600/50 dark:hover:bg-slate-800"
                     >
-                      <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-50 text-teal-700 transition group-hover:bg-teal-100">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-50 text-teal-700 transition group-hover:bg-teal-100 dark:bg-teal-500/15 dark:text-teal-300 dark:group-hover:bg-teal-500/25">
                         <Icon className="h-4 w-4" aria-hidden />
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-semibold text-slate-900">
+                        <span className="block text-sm font-semibold text-slate-900 dark:text-slate-100">
                           {label}
                         </span>
-                        <span className="block text-xs text-slate-500">
+                        <span className="block text-xs text-slate-500 dark:text-slate-400">
                           {desc}
                         </span>
                       </span>
                       <ArrowRight
-                        className="h-4 w-4 shrink-0 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-teal-600"
+                        className="h-4 w-4 shrink-0 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-teal-600 dark:text-slate-500 dark:group-hover:text-teal-400"
                         aria-hidden
                       />
                     </Link>
@@ -423,9 +423,9 @@ export function ProfileView({ user: initialUser }: { user: AuthUser }) {
               </ul>
             </Card>
 
-            <Card className="border-slate-200/80 bg-slate-50/50">
+            <Card className="border-slate-200/80 bg-slate-50/50 dark:border-teal-700/40 dark:bg-slate-900/80 dark:shadow-teal-950/20 dark:ring-1 dark:ring-teal-500/20">
               <div className="flex gap-3">
-                <Shield className="h-5 w-5 shrink-0 text-teal-600" aria-hidden />
+                <Shield className="h-5 w-5 shrink-0 text-teal-600 dark:text-teal-400" aria-hidden />
                 <div>
                   <h2 className="text-sm font-semibold text-slate-900">
                     Session security
@@ -437,7 +437,7 @@ export function ProfileView({ user: initialUser }: { user: AuthUser }) {
                   <button
                     type="button"
                     onClick={logout}
-                    className="mt-4 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-800"
+                    className="mt-4 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-800 dark:border-slate-600 dark:bg-slate-950 dark:text-slate-200 dark:hover:border-rose-500/50 dark:hover:bg-rose-950/40 dark:hover:text-rose-300"
                   >
                     Log out of this device
                   </button>

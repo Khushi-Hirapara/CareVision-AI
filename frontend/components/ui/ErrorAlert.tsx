@@ -17,14 +17,14 @@ export function ErrorAlert({
     <div
       role="alert"
       className={cn(
-        "flex gap-3 rounded-xl border border-rose-200 bg-rose-50/80 px-4 py-3 text-sm text-rose-900",
+        "flex gap-3 rounded-xl border border-rose-200 bg-rose-50/80 px-4 py-3 text-sm text-rose-900 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-100",
         className,
       )}
     >
-      <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-rose-500" aria-hidden />
+      <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-rose-500 dark:text-rose-400" aria-hidden />
       <div>
         <p className="font-semibold">{title}</p>
-        <p className="mt-1 whitespace-pre-line leading-relaxed text-rose-800">{message}</p>
+        <p className="mt-1 whitespace-pre-line leading-relaxed text-rose-800 dark:text-rose-200">{message}</p>
       </div>
     </div>
   );

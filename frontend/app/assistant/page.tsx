@@ -63,7 +63,7 @@ export default function HealthAssistantPage() {
 
   return (
     <div className="page-shell">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-6 sm:px-6 lg:py-8">
+      <div className="page-content--compact flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Link
             href={backHref}
@@ -83,7 +83,7 @@ export default function HealthAssistantPage() {
           ) : null}
         </div>
 
-        <div className="rounded-2xl border border-slate-200/80 bg-white/70 p-4 shadow-sm backdrop-blur-sm sm:p-5">
+        <div className="rounded-2xl border border-slate-200/80 bg-white/70 p-4 shadow-sm backdrop-blur-sm sm:p-5 dark:border-slate-700/80 dark:bg-slate-900/80">
           <label
             htmlFor="assistant-scan-select"
             className="block text-xs font-semibold uppercase tracking-wide text-slate-400"
@@ -91,11 +91,11 @@ export default function HealthAssistantPage() {
             Report to discuss
           </label>
           {loading ? (
-            <div className="mt-2 h-10 animate-pulse rounded-xl bg-slate-100" />
+            <div className="mt-2 h-10 animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800" />
           ) : error ? (
             <p className="mt-2 text-sm text-rose-600">{error}</p>
           ) : scans.length === 0 ? (
-            <p className="mt-2 text-sm text-slate-500">
+            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
               No scans available yet. Upload or wait for a screening report, then
               return here.
             </p>
@@ -104,7 +104,7 @@ export default function HealthAssistantPage() {
               id="assistant-scan-select"
               value={selectedScanId ?? ""}
               onChange={(e) => setSelectedScanId(Number(e.target.value))}
-              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 shadow-sm outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-500/20"
+              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 shadow-sm outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-500/20 dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100"
             >
               {scans.map((scan) => (
                 <option key={scan.id} value={scan.id}>
@@ -117,14 +117,14 @@ export default function HealthAssistantPage() {
         </div>
 
         {topics.length > 0 ? (
-          <section className="rounded-2xl border border-slate-200/80 bg-gradient-to-br from-white via-teal-50/30 to-white p-4 shadow-sm sm:p-5">
+          <section className="rounded-2xl border border-slate-200/80 bg-gradient-to-br from-white via-teal-50/30 to-white p-4 shadow-sm sm:p-5 dark:border-slate-700/80 dark:from-slate-900 dark:via-teal-950/30 dark:to-slate-950">
             <div className="mb-3 flex items-center gap-2">
-              <BookOpen className="h-4 w-4 text-teal-700" aria-hidden />
-              <h2 className="text-sm font-semibold text-slate-900">
+              <BookOpen className="h-4 w-4 text-teal-700 dark:text-teal-400" aria-hidden />
+              <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
                 Health Knowledge
               </h2>
             </div>
-            <p className="mb-3 text-xs text-slate-500">
+            <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
               The assistant uses these educational topics together with your
               selected report. Ask about any of them in chat.
             </p>
@@ -132,12 +132,12 @@ export default function HealthAssistantPage() {
               {topics.map((topic) => (
                 <div
                   key={topic.id}
-                  className="rounded-xl border border-slate-200/80 bg-white/80 px-3 py-2.5 shadow-sm"
+                  className="rounded-xl border border-slate-200/80 bg-white/80 px-3 py-2.5 shadow-sm dark:border-slate-600 dark:bg-slate-800/70"
                 >
-                  <p className="text-xs font-semibold text-teal-800">
+                  <p className="text-xs font-semibold text-teal-800 dark:text-teal-300">
                     {topic.topic}
                   </p>
-                  <p className="mt-1 text-[11px] leading-relaxed text-slate-500">
+                  <p className="mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
                     {topic.summary}
                   </p>
                 </div>
@@ -153,7 +153,7 @@ export default function HealthAssistantPage() {
             variant="page"
           />
         ) : !loading && !error ? (
-          <div className="rounded-2xl border border-dashed border-slate-200 bg-white/60 px-6 py-16 text-center text-sm text-slate-500">
+          <div className="rounded-2xl border border-dashed border-slate-200 bg-white/60 px-6 py-16 text-center text-sm text-slate-500 dark:border-slate-600 dark:bg-slate-900/50 dark:text-slate-400">
             Select a report above to start chatting with the Health Assistant.
           </div>
         ) : null}

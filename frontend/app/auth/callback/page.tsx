@@ -6,16 +6,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
 import { AuthFormCard } from "@/components/auth/AuthFormCard";
-import {
-  AuthApiError,
-  exchangeSsoCode,
-  persistSession,
-} from "@/lib/auth";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { AuthApiError, exchangeSsoCode } from "@/lib/auth";
 import { resolvePostAuthPath } from "@/lib/auth-routes";
 
 function SsoCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { establishSession } = useAuth();
   const started = useRef(false);
   const code = searchParams.get("code");
   const providerError = searchParams.get("error");
@@ -36,14 +34,12 @@ function SsoCallbackContent() {
     void (async () => {
       try {
         const result = await exchangeSsoCode(code);
-        const profile = await persistSession(
+        const profile = await establishSession(
           result.access_token,
           result.user,
           result.refresh_token,
         );
-        router.replace(
-          resolvePostAuthPath(profile.role, nextPath),
-        );
+        router.replace(resolvePostAuthPath(profile.role, nextPath));
       } catch (err) {
         setError(
           err instanceof AuthApiError
@@ -52,7 +48,7 @@ function SsoCallbackContent() {
         );
       }
     })();
-  }, [code, error, nextPath, router]);
+  }, [code, error, nextPath, router, establishSession]);
 
   return (
     <AuthFormCard

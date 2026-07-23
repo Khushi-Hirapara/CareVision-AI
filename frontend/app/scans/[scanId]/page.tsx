@@ -62,7 +62,7 @@ export default function ScanDetailPage() {
 
   return (
     <div className="page-shell">
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
+      <div className="page-content">
         {isLoading && <ScanDetailSkeleton />}
 
         {!isLoading && error && (

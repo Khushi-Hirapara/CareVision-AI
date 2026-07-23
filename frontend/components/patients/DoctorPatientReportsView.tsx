@@ -76,7 +76,7 @@ export function DoctorPatientReportsView({
   const patientLabel = patient?.name ?? "Patient";
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-8 px-4 py-8 sm:px-6 sm:py-10">
+    <div className="page-content flex flex-1 flex-col gap-8">
       <div className="flex flex-wrap items-center gap-4">
         <Link
           href={PATIENTS_PATH}

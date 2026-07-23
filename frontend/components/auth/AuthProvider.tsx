@@ -16,6 +16,7 @@ import {
   loginRequest,
   persistSession,
   registerRequest,
+  type UserApiResponse,
 } from "@/lib/auth";
 import {
   clearAuthStorage,
@@ -32,6 +33,12 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<AuthUser>;
   register: (name: string, email: string, password: string) => Promise<AuthUser>;
+  /** Persist tokens and sync React auth state (used by password login + SSO). */
+  establishSession: (
+    accessToken: string,
+    userFromLogin?: UserApiResponse,
+    refreshToken?: string | null,
+  ) => Promise<AuthUser>;
   logout: () => Promise<void>;
 }
 
@@ -80,28 +87,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
   }, [router]);
 
-  const login = useCallback(async (email: string, password: string) => {
-    const { access_token, refresh_token, user: loginUser } = await loginRequest(
-      email,
-      password,
-    );
-    const profile = await persistSession(access_token, loginUser, refresh_token);
-    setUser(profile);
-    return profile;
-  }, []);
-
-  const register = useCallback(
-    async (name: string, email: string, password: string) => {
-      await registerRequest(name, email, password);
-      const { access_token, refresh_token, user: loginUser } = await loginRequest(
-        email,
-        password,
+  const establishSession = useCallback(
+    async (
+      accessToken: string,
+      userFromLogin?: UserApiResponse,
+      refreshToken?: string | null,
+    ) => {
+      const profile = await persistSession(
+        accessToken,
+        userFromLogin,
+        refreshToken,
       );
-      const profile = await persistSession(access_token, loginUser, refresh_token);
       setUser(profile);
       return profile;
     },
     [],
+  );
+
+  const login = useCallback(
+    async (email: string, password: string) => {
+      const { access_token, refresh_token, user: loginUser } =
+        await loginRequest(email, password);
+      return establishSession(access_token, loginUser, refresh_token);
+    },
+    [establishSession],
+  );
+
+  const register = useCallback(
+    async (name: string, email: string, password: string) => {
+      await registerRequest(name, email, password);
+      const { access_token, refresh_token, user: loginUser } =
+        await loginRequest(email, password);
+      return establishSession(access_token, loginUser, refresh_token);
+    },
+    [establishSession],
   );
 
   const logout = useCallback(async () => {
@@ -117,9 +136,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: user !== null,
       login,
       register,
+      establishSession,
       logout,
     }),
-    [user, isLoading, login, register, logout],
+    [user, isLoading, login, register, establishSession, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

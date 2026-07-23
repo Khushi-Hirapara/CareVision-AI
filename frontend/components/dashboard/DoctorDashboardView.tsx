@@ -41,7 +41,7 @@ import {
   type PatientRecord,
 } from "@/lib/patients";
 import type { DoctorDashboardStats } from "@/lib/types";
-import { formatDate, formatPercent } from "@/lib/utils";
+import { cn, formatDate, formatPercent } from "@/lib/utils";
 
 function flattenInvitations(grouped: GroupedInvitations): PatientInvitationRecord[] {
   return [
@@ -58,27 +58,27 @@ const QUICK_ACTIONS = [
     description: "Send portal invitation",
     icon: MailPlus,
     onClickKey: "invite" as const,
-    accent: "bg-cyan-50 text-cyan-700 ring-cyan-100 hover:bg-cyan-100/80",
+    accent: "bg-cyan-50 text-cyan-700 ring-cyan-100 hover:bg-cyan-100/80 dark:bg-cyan-500/15 dark:text-cyan-300 dark:ring-cyan-400/30 dark:hover:bg-cyan-500/25",
   },
   {
     label: "Analyze X-Ray",
     description: "Run AI screening",
     icon: Upload,
     href: "/analyze",
-    accent: "bg-emerald-50 text-emerald-700 ring-emerald-100 hover:bg-emerald-100/80",
+    accent: "bg-emerald-50 text-emerald-700 ring-emerald-100 hover:bg-emerald-100/80 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-400/30 dark:hover:bg-emerald-500/25",
   },
   {
     label: "Scan History",
     description: "Review all studies",
     icon: History,
     href: "/history",
-    accent: "bg-slate-50 text-slate-700 ring-slate-200 hover:bg-slate-100/80",
+    accent: "bg-slate-50 text-slate-700 ring-slate-200 hover:bg-slate-100/80 dark:bg-slate-700/60 dark:text-slate-200 dark:ring-slate-500/40 dark:hover:bg-slate-700",
   },
 ] as const;
 
 function DashboardSkeleton() {
   return (
-    <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6 sm:py-10 lg:py-12">
+    <div className="page-content flex-1">
       <div className="h-44 animate-pulse rounded-3xl bg-slate-200/70" />
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {Array.from({ length: 5 }).map((_, i) => (
@@ -187,10 +187,14 @@ export function DoctorDashboardView() {
 
   if (error || !stats) {
     return (
-      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-4 py-16 sm:px-6">
+      <div className="page-content flex flex-1 flex-col justify-center">
         <ErrorAlert
           title="Dashboard unavailable"
-          message={`${error ?? "Unknown error"} Ensure the backend is running.`}
+          message={
+            error
+              ? `${error} Ensure the backend is running on port 8001.`
+              : "Ensure the backend is running on port 8001."
+          }
         />
       </div>
     );
@@ -199,7 +203,7 @@ export function DoctorDashboardView() {
   const hasScans = stats.recentScans.length > 0;
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 px-4 py-8 sm:gap-10 sm:px-6 sm:py-10 lg:gap-12 lg:py-12">
+    <div className="page-content flex flex-1 flex-col gap-8 sm:gap-10 lg:gap-12">
       {toast ? <Toast message={toast} onDismiss={() => setToast(null)} /> : null}
 
       {/* Hero */}
@@ -216,10 +220,10 @@ export function DoctorDashboardView() {
           <div className="max-w-2xl">
             <span className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs font-semibold backdrop-blur-sm">
               <Sparkles className="h-3.5 w-3.5" aria-hidden />
-              AI-assisted clinical workspace
+              AI-assisted doctor dashboard
             </span>
             <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
-              Clinical Workspace
+              Dashboard
             </h1>
             <p className="mt-3 text-sm leading-relaxed text-teal-50/95 sm:text-base">
               Invite patients to the portal, manage active patients, and review AI chest
@@ -321,7 +325,7 @@ export function DoctorDashboardView() {
               </>
             );
             const className =
-              "group flex w-full items-center gap-3 rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-teal-200/60 hover:shadow-md";
+              "group flex w-full items-center gap-3 rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-teal-200/60 hover:shadow-md dark:border-slate-700/80 dark:bg-slate-900 dark:hover:border-teal-600/40 dark:hover:shadow-teal-950/30";
 
             if ("href" in item && item.href) {
               return (
@@ -409,40 +413,55 @@ export function DoctorDashboardView() {
           />
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
-            {stats.recentScans.map((scan) => (
-              <Link
-                key={scan.id}
-                href={`/scans/${scan.id}`}
-                className="group flex gap-3 overflow-hidden rounded-2xl border border-slate-200/90 bg-gradient-to-r from-white to-slate-50/50 p-2 shadow-sm transition hover:-translate-y-0.5 hover:border-teal-200/80 hover:shadow-md"
-              >
-                <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-xl bg-slate-950">
-                  <StudyImage
-                    src={scan.imagePath}
-                    alt=""
-                    fill
-                    objectFit="cover"
-                    className="opacity-90 transition duration-300 group-hover:scale-105"
-                    sizes="128px"
-                  />
-                </div>
-                <div className="flex min-w-0 flex-1 flex-col justify-center py-1 pr-2">
-                  <p className="truncate font-semibold text-slate-900">{scan.patientName}</p>
-                  <p className="mt-0.5 text-xs text-slate-500">{formatDate(scan.createdAt)}</p>
-                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                    <PredictionBadge label={scan.prediction} />
-                    <SeverityBadge severity={scan.severity} />
-                    <span className="text-xs font-semibold tabular-nums text-slate-600">
-                      {formatPercent(scan.confidence)}
-                    </span>
+            {stats.recentScans.map((scan) => {
+              const isPneumonia = scan.prediction === "Pneumonia";
+              return (
+                <Link
+                  key={scan.id}
+                  href={`/scans/${scan.id}`}
+                  className="group flex gap-3.5 overflow-hidden rounded-2xl border border-slate-200/90 bg-gradient-to-r from-white to-slate-50/70 p-2.5 shadow-sm transition hover:-translate-y-0.5 hover:border-teal-200/80 hover:shadow-md dark:border-slate-700/80 dark:from-slate-900 dark:to-slate-950 dark:shadow-black/20 dark:hover:border-teal-500/40 dark:hover:shadow-teal-950/30"
+                >
+                  <div className="relative h-24 w-28 shrink-0 overflow-hidden rounded-xl bg-slate-950 ring-1 ring-slate-800/40">
+                    <StudyImage
+                      src={scan.imagePath}
+                      alt=""
+                      fill
+                      objectFit="cover"
+                      className="opacity-90 transition duration-300 group-hover:scale-105"
+                      sizes="128px"
+                    />
+                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/50 to-transparent" />
                   </div>
-                </div>
-              </Link>
-            ))}
+                  <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5 py-0.5 pr-1">
+                    <p className="truncate font-semibold capitalize text-slate-900 dark:text-slate-100">
+                      {scan.patientName}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {formatDate(scan.createdAt)}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <PredictionBadge label={scan.prediction} />
+                      <SeverityBadge severity={scan.severity} />
+                      <span
+                        className={cn(
+                          "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums ring-1",
+                          isPneumonia
+                            ? "bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-500/15 dark:text-rose-300 dark:ring-rose-400/40"
+                            : "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-400/40",
+                        )}
+                      >
+                        {formatPercent(scan.confidence)}
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         )}
       </DashboardPanel>
 
-      <section className="shrink-0 rounded-2xl border border-slate-200/80 bg-white/80 px-5 py-4 shadow-sm backdrop-blur-sm sm:px-6">
+      <section className="shrink-0 rounded-2xl border border-slate-200/80 bg-white/80 px-5 py-4 shadow-sm backdrop-blur-sm sm:px-6 dark:border-slate-700/80 dark:bg-slate-900/80">
         <p className="text-center text-xs leading-relaxed text-slate-500 sm:text-sm">
           <span className="font-semibold text-slate-700">CareVision AI</span> stores
           screening results on your workspace. AI outputs support clinical review—they are

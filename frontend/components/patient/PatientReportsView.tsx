@@ -36,7 +36,7 @@ export function PatientReportsView() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-10 sm:px-6">
+      <div className="page-content flex flex-1 flex-col">
         <LoadingPanel message="Loading your reports…" />
       </div>
     );
@@ -44,14 +44,14 @@ export function PatientReportsView() {
 
   if (error) {
     return (
-      <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:px-6">
+      <div className="page-content flex-1">
         <ErrorAlert title="Reports unavailable" message={error} />
       </div>
     );
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 px-4 py-8 sm:px-6 sm:py-10">
+    <div className="page-content flex flex-1 flex-col gap-8">
       <PageHeader
         title="My Reports"
         description="Your chest X-ray screening results and downloadable PDF reports."

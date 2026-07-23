@@ -38,8 +38,9 @@ export function ChatBubble({ message }: ChatBubbleProps) {
       </div>
       <div
         className={cn(
-          "max-w-[90%] rounded-2xl rounded-tl-md border border-slate-200/80 bg-white/95 px-4 py-3 shadow-sm backdrop-blur-sm sm:max-w-[80%]",
-          message.isEmergency && "border-rose-200 bg-rose-50/40",
+          "max-w-[90%] rounded-2xl rounded-tl-md border border-slate-200/80 bg-white/95 px-4 py-3 shadow-sm backdrop-blur-sm sm:max-w-[80%] dark:border-slate-600/80 dark:bg-slate-800/90 dark:shadow-black/30",
+          message.isEmergency &&
+            "border-rose-200 bg-rose-50/40 dark:border-rose-500/40 dark:bg-rose-950/40",
         )}
       >
         <MarkdownMessage content={message.content} />

@@ -13,7 +13,7 @@ export default function DoctorPatientTrendsPage() {
 
   if (!Number.isFinite(patientId) || patientId < 1) {
     return (
-      <div className="mx-auto max-w-6xl px-4 py-10 text-sm text-slate-600">
+      <div className="page-content text-sm text-slate-600">
         Invalid patient.
       </div>
     );
