@@ -104,7 +104,7 @@ export default function HistoryPage() {
   if (hasPatientFilter) {
     return (
       <div className="page-shell">
-        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:py-12">
+        <div className="page-content">
           <p className="text-sm text-slate-600">Opening patient reports…</p>
         </div>
       </div>
@@ -113,7 +113,7 @@ export default function HistoryPage() {
 
   return (
     <div className="page-shell">
-      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:py-12">
+      <div className="page-content">
         <PageHeader
           title="Scan History"
           description="Review past chest X-ray analyses with patient records, predictions, and downloadable clinical reports."
@@ -122,9 +122,9 @@ export default function HistoryPage() {
         {!isLoading && !error && scans.length > 0 && (
           <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
             {[
-              { label: "Total scans", value: scans.length, accent: "text-teal-700" },
-              { label: "Normal", value: normalCount, accent: "text-emerald-700" },
-              { label: "Pneumonia", value: pneumoniaCount, accent: "text-rose-700" },
+              { label: "Total scans", value: scans.length, accent: "text-teal-700 dark:text-teal-300" },
+              { label: "Normal", value: normalCount, accent: "text-emerald-700 dark:text-emerald-300" },
+              { label: "Pneumonia", value: pneumoniaCount, accent: "text-rose-700 dark:text-rose-300" },
               {
                 label: "Avg. confidence",
                 value:
@@ -135,17 +135,17 @@ export default function HistoryPage() {
                           100,
                       )}%`
                     : "-",
-                accent: "text-slate-800",
+                accent: "text-amber-700 dark:text-amber-300",
               },
             ].map((stat) => (
               <div
                 key={stat.label}
-                className="rounded-2xl border border-slate-200/80 bg-white px-5 py-4 shadow-sm"
+                className="rounded-2xl border border-slate-200/80 bg-white px-5 py-4 shadow-sm dark:border-slate-700/80 dark:bg-slate-900 dark:shadow-black/20 dark:ring-1 dark:ring-teal-500/10"
               >
                 <p className={`text-2xl font-bold tabular-nums ${stat.accent}`}>
                   {stat.value}
                 </p>
-                <p className="mt-1 text-xs font-medium text-slate-500">
+                <p className="mt-1 text-xs font-medium text-slate-500 dark:text-slate-400">
                   {stat.label}
                 </p>
               </div>

@@ -66,7 +66,7 @@ export function RoleDashboardPanel({ role }: RoleDashboardPanelProps) {
       : "Your personal scan history and latest results.";
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
+    <div className="page-content">
       <div className="flex items-start gap-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-700">
           <LayoutDashboard className="h-5 w-5" aria-hidden />

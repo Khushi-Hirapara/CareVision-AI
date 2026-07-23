@@ -25,7 +25,7 @@ export function HomeCta() {
   const secondaryLabel = isAuthenticated ? "Go to dashboard" : "Sign in";
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+    <section className="w-full px-3 py-16 sm:px-5 sm:py-20 lg:px-6">
       <div className="home-cta relative overflow-hidden rounded-3xl border border-teal-200/50 bg-gradient-to-br from-teal-600 via-teal-600 to-cyan-700 px-6 py-10 text-center shadow-xl shadow-teal-900/15 sm:px-12 sm:py-14">
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.08]"

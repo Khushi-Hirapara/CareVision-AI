@@ -16,15 +16,15 @@ export function AuthFormCard({
   footer,
 }: AuthFormCardProps) {
   return (
-    <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center bg-gradient-to-b from-teal-50/40 via-slate-50 to-white px-4 py-12">
+    <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center bg-gradient-to-b from-teal-50/40 via-slate-50 to-white px-4 py-12 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
       <div className="w-full max-w-md">
         <Card className="p-6 sm:p-8">
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
             {title}
           </h1>
-          <p className="mt-2 text-sm text-slate-600">{description}</p>
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">{description}</p>
           <div className="mt-6">{children}</div>
-          <div className="mt-6 border-t border-slate-100 pt-6 text-center text-sm text-slate-600">
+          <div className="mt-6 border-t border-slate-100 pt-6 text-center text-sm text-slate-600 dark:border-slate-700 dark:text-slate-400">
             {footer}
           </div>
         </Card>
@@ -47,7 +47,7 @@ export function AuthFooterLink({
       {prompt}{" "}
       <Link
         href={href}
-        className="font-semibold text-teal-700 hover:text-teal-800"
+        className="font-semibold text-teal-700 hover:text-teal-800 dark:text-teal-400 dark:hover:text-teal-300"
       >
         {label}
       </Link>

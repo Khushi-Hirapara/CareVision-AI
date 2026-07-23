@@ -33,7 +33,7 @@ export function Footer() {
 
   return (
     <footer className="mt-auto border-t border-slate-200 bg-slate-900 text-slate-300">
-      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-14">
+      <div className="w-full px-3 py-12 sm:px-5 sm:py-14 lg:px-6">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-12 lg:gap-8">
           {/* Brand */}
           <div className="lg:col-span-4">
@@ -119,7 +119,7 @@ export function Footer() {
 
       {/* Bottom bar */}
       <div className="border-t border-slate-800 bg-slate-950/50">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-5 sm:flex-row sm:px-6">
+        <div className="flex w-full flex-col items-center justify-between gap-3 px-3 py-5 sm:flex-row sm:px-5 lg:px-6">
           <p className="text-center text-xs text-slate-500 sm:text-left">
             © {year} CareVision AI. All rights reserved.
           </p>

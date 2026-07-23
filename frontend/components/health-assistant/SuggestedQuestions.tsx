@@ -90,10 +90,10 @@ export function SuggestedQuestions({ onSelect, disabled }: SuggestedQuestionsPro
               type="button"
               disabled={disabled}
               onClick={() => onSelect(prompt.message)}
-              className="group inline-flex items-center gap-1.5 rounded-full border border-slate-200/90 bg-white/80 px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm backdrop-blur-sm transition hover:border-teal-300 hover:bg-teal-50 hover:text-teal-800 disabled:cursor-not-allowed disabled:opacity-50"
+              className="group inline-flex items-center gap-1.5 rounded-full border border-slate-200/90 bg-white/80 px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm backdrop-blur-sm transition hover:border-teal-300 hover:bg-teal-50 hover:text-teal-800 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800/80 dark:text-slate-300 dark:hover:border-teal-500/50 dark:hover:bg-teal-950/50 dark:hover:text-teal-200"
             >
               <Icon
-                className="h-3.5 w-3.5 text-slate-400 transition group-hover:text-teal-600"
+                className="h-3.5 w-3.5 text-slate-400 transition group-hover:text-teal-600 dark:text-slate-500 dark:group-hover:text-teal-400"
                 aria-hidden
               />
               {prompt.label}
