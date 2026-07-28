@@ -56,7 +56,7 @@ export function ConfidenceGauge({
             r={radius}
             fill="none"
             strokeWidth={dims.stroke}
-            className="stroke-slate-200"
+            className="stroke-slate-200 dark:stroke-slate-700"
           />
           <circle
             cx={center}
@@ -71,7 +71,7 @@ export function ConfidenceGauge({
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className={cn("font-bold tabular-nums text-slate-900", dims.font)}>
+          <span className={cn("font-bold tabular-nums text-slate-900 dark:text-slate-100", dims.font)}>
             {clamped % 1 === 0 ? clamped.toFixed(0) : clamped.toFixed(1)}%
           </span>
         </div>

@@ -15,7 +15,6 @@ import {
 import { AiAnalysisSummaryReport } from "@/components/scans/AiAnalysisSummaryReport";
 import { DicomMetadataPanel } from "@/components/scans/DicomMetadataPanel";
 import { ScanNotesSection } from "@/components/scans/ScanNotesSection";
-import { ExplainabilityPanel } from "@/components/explainability/ExplainabilityPanel";
 import type { ScanRecord, UserRole } from "@/lib/types";
 import { formatDate, cn } from "@/lib/utils";
 import { DownloadReportButton } from "@/components/DownloadReportButton";
@@ -241,36 +240,27 @@ export function ScanDetailView({ scan, userRole }: ScanDetailViewProps) {
                 src={scan.imagePath}
                 alt={`Chest X-ray for ${scan.patientName}`}
               />
-              <div className="space-y-3">
-                <ImagingPanel
-                  title="Grad-CAM Heatmap"
-                  src={scan.heatmapPath}
-                  alt="Grad-CAM heatmap overlay highlighting suspicious regions"
-                  empty={
-                    <div className="flex aspect-[4/5] flex-col items-center justify-center gap-3 bg-slate-50 p-6 text-center">
-                      <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
-                        <Layers className="h-7 w-7" aria-hidden />
-                      </span>
-                      <div>
-                        <p className="text-sm font-semibold text-slate-700">
-                          Heatmap not available
-                        </p>
-                        <p className="mt-1 max-w-[240px] text-xs leading-relaxed text-slate-500">
-                          Grad-CAM may be disabled or could not be generated for
-                          this scan.
-                        </p>
-                      </div>
+              <ImagingPanel
+                title="Grad-CAM Heatmap"
+                src={scan.heatmapPath}
+                alt="Grad-CAM heatmap overlay highlighting suspicious regions"
+                empty={
+                  <div className="flex aspect-[4/5] flex-col items-center justify-center gap-3 bg-slate-50 p-6 text-center">
+                    <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+                      <Layers className="h-7 w-7" aria-hidden />
+                    </span>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-700">
+                        Heatmap not available
+                      </p>
+                      <p className="mt-1 max-w-[240px] text-xs leading-relaxed text-slate-500">
+                        Grad-CAM may be disabled or could not be generated for
+                        this scan.
+                      </p>
                     </div>
-                  }
-                />
-                {scan.heatmapPath && scan.observedRegions ? (
-                  <ExplainabilityPanel
-                    prediction={scan.prediction}
-                    observedRegions={scan.observedRegions}
-                    layout="grid"
-                  />
-                ) : null}
-              </div>
+                  </div>
+                }
+              />
             </div>
             {scan.heatmapPath ? (
               <p className="mt-4 text-xs leading-relaxed text-slate-500">
