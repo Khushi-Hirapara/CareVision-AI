@@ -1,9 +1,11 @@
-import { ShieldCheck } from "lucide-react";
+import { ShieldAlert, ShieldCheck } from "lucide-react";
 import type { AnalysisResult } from "@/lib/types";
 import { AiAnalysisSummaryReport } from "@/components/scans/AiAnalysisSummaryReport";
 import { DicomMetadataPanel } from "@/components/scans/DicomMetadataPanel";
 import { HeatmapPanel } from "@/components/HeatmapPanel";
 import { Card } from "@/components/ui/Card";
+import { isAbnormalPrediction, predictionToneClasses } from "@/lib/prediction";
+import { cn } from "@/lib/utils";
 
 interface AnalysisResultCardProps {
   result: AnalysisResult;
@@ -14,10 +16,14 @@ interface AnalysisResultCardProps {
 export function AnalysisResultCard({ result, imageUrl }: AnalysisResultCardProps) {
   const displayImage =
     imageUrl.startsWith("dicom:") ? result.imageUrl : imageUrl || result.imageUrl;
+  const isAbnormal = isAbnormalPrediction(result.prediction);
+  const tones = predictionToneClasses(isAbnormal);
 
   return (
     <Card className="space-y-5">
-      <h3 className="text-sm font-semibold text-slate-900">Analysis complete</h3>
+      <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+        Analysis complete
+      </h3>
 
       <AiAnalysisSummaryReport
         prediction={result.prediction}
@@ -34,25 +40,29 @@ export function AnalysisResultCard({ result, imageUrl }: AnalysisResultCardProps
       />
 
       {result.recommendation ? (
-        <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-4">
-          <div className="mb-2 flex items-center gap-2 text-emerald-800">
-            <ShieldCheck className="h-4 w-4 shrink-0" aria-hidden />
+        <div className={cn("rounded-xl border p-4", tones.surface)}>
+          <div className={cn("mb-2 flex items-center gap-2", tones.heading)}>
+            {isAbnormal ? (
+              <ShieldAlert className="h-4 w-4 shrink-0" aria-hidden />
+            ) : (
+              <ShieldCheck className="h-4 w-4 shrink-0" aria-hidden />
+            )}
             <p className="text-xs font-semibold uppercase tracking-wide">
               Screening Guidance
             </p>
           </div>
-          <p className="text-sm leading-relaxed text-slate-700 whitespace-pre-line">
+          <p className="text-sm leading-relaxed whitespace-pre-line text-slate-700 dark:text-slate-300">
             {result.recommendation}
           </p>
         </div>
       ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-          <p className="border-b border-slate-100 px-3 py-2 text-xs font-medium text-slate-600">
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700/80 dark:bg-slate-950/40">
+          <p className="border-b border-slate-100 px-3 py-2 text-xs font-medium text-slate-600 dark:border-slate-700/70 dark:text-slate-400">
             {result.dicomMetadata ? "Converted study image" : "Uploaded X-ray"}
           </p>
-          <div className="relative aspect-square bg-slate-50">
+          <div className="relative aspect-square bg-slate-50 dark:bg-slate-900/80">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={displayImage}

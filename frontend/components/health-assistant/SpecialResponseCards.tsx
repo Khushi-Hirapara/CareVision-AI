@@ -9,7 +9,10 @@ import type { PredictionLabel, SeverityLabel } from "@/lib/types";
 import { AlertTriangle, FileText, Sparkles } from "lucide-react";
 
 function asPrediction(value: unknown): PredictionLabel {
-  return value === "Pneumonia" ? "Pneumonia" : "Normal";
+  if (value === "Pneumonia" || value === "COVID" || value === "Normal") {
+    return value;
+  }
+  return "Normal";
 }
 
 function asSeverity(value: unknown): SeverityLabel {

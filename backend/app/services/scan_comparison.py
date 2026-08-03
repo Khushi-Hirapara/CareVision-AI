@@ -87,12 +87,20 @@ def _improvement_pct(
         baseline = max(earlier_opacity, 1.0)
         scores.append(((earlier_opacity - later_opacity) / baseline) * 100.0)
 
-    if earlier.prediction == "Pneumonia" and later.prediction == "Normal":
+    if earlier.prediction in ("Pneumonia", "COVID") and later.prediction == "Normal":
         scores.append(70.0)
-    elif earlier.prediction == "Normal" and later.prediction == "Pneumonia":
+    elif earlier.prediction == "Normal" and later.prediction in ("Pneumonia", "COVID"):
         scores.append(-70.0)
+    elif earlier.prediction != later.prediction and {earlier.prediction, later.prediction} <= {
+        "Pneumonia",
+        "COVID",
+    }:
+        scores.append(0.0)
 
-    if earlier.prediction == "Pneumonia" and later.prediction == "Pneumonia":
+    if (
+        earlier.prediction in ("Pneumonia", "COVID")
+        and later.prediction == earlier.prediction
+    ):
         scores.append((earlier.confidence - later.confidence) * 40.0)
 
     avg = sum(scores) / len(scores)

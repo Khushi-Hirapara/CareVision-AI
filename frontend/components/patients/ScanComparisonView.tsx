@@ -300,52 +300,86 @@ export function ScanComparisonView({
 
               <Card
                 className={cn(
-                  "overflow-hidden border-l-4 p-0",
-                  comparison.trend === "improved" && "border-l-emerald-500",
-                  comparison.trend === "worsened" && "border-l-rose-500",
-                  comparison.trend === "stable" && "border-l-slate-400",
+                  "overflow-hidden border p-0 shadow-sm",
+                  comparison.trend === "improved" &&
+                    "border-emerald-200/90 dark:border-emerald-500/30",
+                  comparison.trend === "worsened" &&
+                    "border-rose-200/90 dark:border-rose-500/30",
+                  comparison.trend === "stable" &&
+                    "border-slate-200/90 dark:border-slate-600/60",
                 )}
               >
                 <div
                   className={cn(
-                    "border-b px-5 py-4 sm:px-6",
-                    comparison.trend === "improved" && "border-emerald-100 bg-emerald-50/70",
-                    comparison.trend === "worsened" && "border-rose-100 bg-rose-50/70",
-                    comparison.trend === "stable" && "border-slate-100 bg-slate-50/80",
+                    "border-b px-5 py-5 sm:px-6",
+                    comparison.trend === "improved" &&
+                      "border-emerald-200/80 bg-gradient-to-br from-emerald-50 via-emerald-50/80 to-teal-50/40 dark:border-emerald-500/25 dark:from-emerald-500/15 dark:via-emerald-500/10 dark:to-teal-500/5",
+                    comparison.trend === "worsened" &&
+                      "border-rose-200/80 bg-gradient-to-br from-rose-50 via-rose-50/80 to-orange-50/30 dark:border-rose-500/25 dark:from-rose-500/15 dark:via-rose-500/10 dark:to-orange-500/5",
+                    comparison.trend === "stable" &&
+                      "border-slate-200/80 bg-gradient-to-br from-slate-50 via-white to-slate-50/70 dark:border-slate-600/50 dark:from-slate-800/80 dark:via-slate-900 dark:to-slate-950",
                   )}
                 >
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  <p
+                    className={cn(
+                      "text-[11px] font-semibold uppercase tracking-[0.14em]",
+                      comparison.trend === "improved" &&
+                        "text-emerald-700 dark:text-emerald-300",
+                      comparison.trend === "worsened" &&
+                        "text-rose-700 dark:text-rose-300",
+                      comparison.trend === "stable" &&
+                        "text-slate-600 dark:text-slate-300",
+                    )}
+                  >
                     AI Comparison
                   </p>
                   <div className="mt-3 flex flex-wrap items-end gap-3">
-                    {comparison.trend === "improved" ? (
-                      <TrendingUp className="h-7 w-7 text-emerald-600" aria-hidden />
-                    ) : comparison.trend === "worsened" ? (
-                      <TrendingDown className="h-7 w-7 text-rose-600" aria-hidden />
-                    ) : (
-                      <Minus className="h-7 w-7 text-slate-500" aria-hidden />
-                    )}
+                    <span
+                      className={cn(
+                        "flex h-11 w-11 items-center justify-center rounded-xl ring-1",
+                        comparison.trend === "improved" &&
+                          "bg-emerald-100 text-emerald-700 ring-emerald-200/80 dark:bg-emerald-500/20 dark:text-emerald-300 dark:ring-emerald-400/40",
+                        comparison.trend === "worsened" &&
+                          "bg-rose-100 text-rose-700 ring-rose-200/80 dark:bg-rose-500/20 dark:text-rose-300 dark:ring-rose-400/40",
+                        comparison.trend === "stable" &&
+                          "bg-slate-100 text-slate-600 ring-slate-200/80 dark:bg-slate-700 dark:text-slate-300 dark:ring-slate-500/50",
+                      )}
+                    >
+                      {comparison.trend === "improved" ? (
+                        <TrendingUp className="h-5 w-5" aria-hidden />
+                      ) : comparison.trend === "worsened" ? (
+                        <TrendingDown className="h-5 w-5" aria-hidden />
+                      ) : (
+                        <Minus className="h-5 w-5" aria-hidden />
+                      )}
+                    </span>
                     <div>
                       <p
                         className={cn(
-                          "text-sm font-medium",
-                          comparison.trend === "improved" && "text-emerald-800",
-                          comparison.trend === "worsened" && "text-rose-800",
-                          comparison.trend === "stable" && "text-slate-700",
+                          "text-sm font-semibold",
+                          comparison.trend === "improved" &&
+                            "text-emerald-700 dark:text-emerald-300",
+                          comparison.trend === "worsened" &&
+                            "text-rose-700 dark:text-rose-300",
+                          comparison.trend === "stable" &&
+                            "text-slate-600 dark:text-slate-300",
                         )}
                       >
                         {comparison.trend === "improved"
                           ? "Improvement"
                           : comparison.trend === "worsened"
                             ? "Worsening"
-                            : "Change"}
+                            : "Stable"}
                       </p>
                       <p
                         className={cn(
                           "text-3xl font-bold tabular-nums tracking-tight sm:text-4xl",
-                          comparison.trend === "improved" && "text-emerald-800",
-                          comparison.trend === "worsened" && "text-rose-800",
-                          comparison.trend === "stable" && "text-slate-800",
+                          comparison.trend === "improved" &&
+                            "text-emerald-800 dark:text-emerald-200",
+                          comparison.trend === "worsened" &&
+                            "text-rose-800 dark:text-rose-200",
+                          comparison.trend === "stable" &&
+                            "text-slate-800 dark:text-slate-100",
                         )}
                       >
                         {Math.abs(comparison.improvementPct)}%
@@ -354,42 +388,78 @@ export function ScanComparisonView({
                   </div>
                 </div>
 
-                <div className="grid gap-4 px-5 py-5 sm:grid-cols-3 sm:px-6">
-                  <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+                <div className="grid gap-4 px-5 py-5 sm:grid-cols-3 sm:gap-5 sm:px-6 dark:bg-slate-900/40">
+                  <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3.5 dark:border-slate-700/70 dark:bg-slate-950/50">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-500 dark:text-slate-400">
                       Opacity
                     </p>
-                    <p className="mt-1.5 text-base font-semibold text-slate-900">
+                    <p className="mt-1.5 text-base font-semibold text-slate-900 dark:text-slate-100">
                       {comparison.opacityLabel}
                     </p>
                     {comparison.opacityEarlierPct !== null &&
                     comparison.opacityLaterPct !== null ? (
-                      <p className="mt-1 text-sm tabular-nums text-slate-600">
+                      <p className="mt-1 text-sm tabular-nums text-slate-600 dark:text-slate-400">
                         {comparison.opacityEarlierPct}% → {comparison.opacityLaterPct}%
                       </p>
                     ) : null}
                   </div>
 
-                  <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+                  <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3.5 dark:border-slate-700/70 dark:bg-slate-950/50">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-500 dark:text-slate-400">
                       Severity
                     </p>
-                    <p className="mt-1.5 text-base font-semibold text-slate-900">
-                      {comparison.severityFrom} → {comparison.severityTo}
+                    <p className="mt-1.5 text-base font-semibold text-slate-900 dark:text-slate-100">
+                      <span className="text-slate-500 dark:text-slate-400">
+                        {comparison.severityFrom}
+                      </span>
+                      <span className="mx-1.5 text-slate-400 dark:text-slate-500">→</span>
+                      <span
+                        className={cn(
+                          comparison.trend === "worsened" &&
+                            "text-rose-700 dark:text-rose-300",
+                          comparison.trend === "improved" &&
+                            "text-emerald-700 dark:text-emerald-300",
+                        )}
+                      >
+                        {comparison.severityTo}
+                      </span>
                     </p>
                   </div>
 
-                  <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+                  <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3.5 dark:border-slate-700/70 dark:bg-slate-950/50">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-500 dark:text-slate-400">
                       Prediction
                     </p>
-                    <p className="mt-1.5 text-base font-semibold text-slate-900">
-                      {comparison.predictionFrom} → {comparison.predictionTo}
+                    <p className="mt-1.5 text-base font-semibold text-slate-900 dark:text-slate-100">
+                      <span className="text-slate-500 dark:text-slate-400">
+                        {comparison.predictionFrom}
+                      </span>
+                      <span className="mx-1.5 text-slate-400 dark:text-slate-500">→</span>
+                      <span
+                        className={cn(
+                          comparison.trend === "worsened" &&
+                            "text-rose-700 dark:text-rose-300",
+                          comparison.trend === "improved" &&
+                            "text-emerald-700 dark:text-emerald-300",
+                        )}
+                      >
+                        {comparison.predictionTo}
+                      </span>
                     </p>
                   </div>
                 </div>
 
-                <p className="border-t border-slate-100 bg-slate-50/80 px-5 py-3 text-sm leading-relaxed text-slate-600 sm:px-6">
+                <p
+                  className={cn(
+                    "border-t px-5 py-3.5 text-sm leading-relaxed sm:px-6",
+                    comparison.trend === "improved" &&
+                      "border-emerald-100 bg-emerald-50/50 text-emerald-900/80 dark:border-emerald-500/20 dark:bg-emerald-500/5 dark:text-emerald-100/80",
+                    comparison.trend === "worsened" &&
+                      "border-rose-100 bg-rose-50/50 text-rose-900/80 dark:border-rose-500/20 dark:bg-rose-500/5 dark:text-rose-100/80",
+                    comparison.trend === "stable" &&
+                      "border-slate-100 bg-slate-50/80 text-slate-600 dark:border-slate-700/70 dark:bg-slate-950/40 dark:text-slate-300",
+                  )}
+                >
                   {comparison.summary} This is an AI-assisted progress estimate for
                   screening studies and does not replace clinical judgment.
                 </p>

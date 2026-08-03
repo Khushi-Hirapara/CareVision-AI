@@ -4,9 +4,9 @@ Train an EfficientNetB0 transfer-learning model for chest X-ray classification.
 Expected dataset layout (relative to project root):
 
     dataset/
-      train/NORMAL/  train/PNEUMONIA/
-      val/NORMAL/    val/PNEUMONIA/
-      test/NORMAL/   test/PNEUMONIA/
+      train/NORMAL/  train/PNEUMONIA/  train/COVID/
+      val/NORMAL/    val/PNEUMONIA/    val/COVID/
+      test/NORMAL/   test/PNEUMONIA/   test/COVID/
 
 Usage:
     cd backend
@@ -27,18 +27,20 @@ from tensorflow import keras
 from tensorflow.keras import layers
 
 try:
-    from model.evaluate_model import _binary_metrics, _classification_report
+    from model.evaluate_model import _classification_report, _multiclass_metrics
     from model.preprocessing import (
         CLASS_INDICES,
         CLASS_NAMES,
+        NUM_CLASSES,
         preprocess_array_for_model,
         preprocessing_mode,
     )
 except ImportError:
-    from evaluate_model import _binary_metrics, _classification_report
+    from evaluate_model import _classification_report, _multiclass_metrics
     from preprocessing import (
         CLASS_INDICES,
         CLASS_NAMES,
+        NUM_CLASSES,
         preprocess_array_for_model,
         preprocessing_mode,
     )
@@ -63,7 +65,7 @@ def _env_bool(name: str, default: bool) -> bool:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Train EfficientNetB0 chest X-ray classifier (NORMAL vs PNEUMONIA)."
+        description="Train EfficientNetB0 chest X-ray classifier (NORMAL / PNEUMONIA / COVID)."
     )
     parser.add_argument(
         "--dataset-dir",
@@ -103,7 +105,7 @@ def _check_split(dataset_dir: Path, split: str) -> Path:
     if not split_dir.is_dir():
         raise FileNotFoundError(
             f"Missing split directory: {split_dir}\n"
-            "Download the Chest X-Ray (Pneumonia) dataset and run:\n"
+            "Prepare NORMAL/PNEUMONIA/COVID folders under dataset/ and run:\n"
             "  py -3.11 backend/model/prepare_dataset.py --source path/to/chest_xray\n"
             "See dataset/README.md for details."
         )
@@ -111,7 +113,9 @@ def _check_split(dataset_dir: Path, split: str) -> Path:
         class_dir = split_dir / class_name
         if not class_dir.is_dir():
             raise FileNotFoundError(f"Missing class folder: {class_dir}")
-        if not any(class_dir.iterdir()):
+        if not any(
+            p.is_file() and p.suffix.lower() in IMAGE_EXTENSIONS for p in class_dir.iterdir()
+        ):
             raise FileNotFoundError(f"No images found in {class_dir}")
     return split_dir
 
@@ -140,19 +144,18 @@ def _print_split_counts(dataset_dir: Path) -> dict[str, int]:
 
 
 def _compute_class_weights(train_counts: dict[str, int]) -> dict[int, float]:
-    n_normal = train_counts["NORMAL"]
-    n_pneumonia = train_counts["PNEUMONIA"]
-    if n_normal == 0 or n_pneumonia == 0:
-        raise ValueError("Both NORMAL and PNEUMONIA must have at least one training image.")
-    total = n_normal + n_pneumonia
+    missing = [name for name in CLASS_NAMES if train_counts.get(name, 0) <= 0]
+    if missing:
+        raise ValueError(
+            f"Each class needs at least one training image. Missing/empty: {missing}"
+        )
+    total = sum(train_counts[name] for name in CLASS_NAMES)
+    n_classes = float(NUM_CLASSES)
     weights = {
-        0: total / (2.0 * n_normal),
-        1: total / (2.0 * n_pneumonia),
+        CLASS_INDICES[name]: total / (n_classes * train_counts[name]) for name in CLASS_NAMES
     }
-    print(
-        "\nClass weights (balanced): "
-        f"NORMAL={weights[0]:.4f}  PNEUMONIA={weights[1]:.4f}"
-    )
+    weight_text = "  ".join(f"{name}={weights[CLASS_INDICES[name]]:.4f}" for name in CLASS_NAMES)
+    print(f"\nClass weights (balanced): {weight_text}")
     return weights
 
 
@@ -167,7 +170,7 @@ def _build_datasets(
     common_kwargs = {
         "image_size": (IMG_SIZE, IMG_SIZE),
         "batch_size": batch_size,
-        "label_mode": "binary",
+        "label_mode": "int",
         "class_names": list(CLASS_NAMES),
         "seed": seed,
         "validation_split": 0.2,
@@ -190,7 +193,7 @@ def _build_datasets(
         shuffle=False,
         image_size=(IMG_SIZE, IMG_SIZE),
         batch_size=batch_size,
-        label_mode="binary",
+        label_mode="int",
         class_names=list(CLASS_NAMES),
         seed=seed,
     )
@@ -238,8 +241,8 @@ def _print_class_indices(class_names: list[str]) -> None:
     class_indices = {name: index for index, name in enumerate(class_names)}
     print("\n--- Class label mapping (train_generator.class_indices) ---")
     print(f"class_indices: {class_indices}")
-    print("Expected: {'NORMAL': 0, 'PNEUMONIA': 1}")
-    print("Inference rule: raw_output >= 0.5 => PNEUMONIA (1), else NORMAL (0)")
+    print(f"Expected: {dict(CLASS_INDICES)}")
+    print("Inference rule: prediction = argmax(softmax)")
     if class_indices != CLASS_INDICES:
         raise ValueError(f"Unexpected class_indices {class_indices}; expected {CLASS_INDICES}")
     logger.info("Training class_indices verified: %s", class_indices)
@@ -250,10 +253,7 @@ def _dataset_label_counts(dataset: tf.data.Dataset) -> dict[str, int]:
     for _, labels in dataset:
         labels_all.append(tf.reshape(labels, [-1]).numpy().astype(np.int32))
     flat = np.concatenate(labels_all) if labels_all else np.array([], dtype=np.int32)
-    return {
-        "NORMAL": int(np.sum(flat == 0)),
-        "PNEUMONIA": int(np.sum(flat == 1)),
-    }
+    return {name: int(np.sum(flat == CLASS_INDICES[name])) for name in CLASS_NAMES}
 
 
 def _build_model() -> tuple[keras.Model, keras.Model]:
@@ -269,7 +269,7 @@ def _build_model() -> tuple[keras.Model, keras.Model]:
     x = layers.Dropout(0.35, name="dropout_1")(backbone.output)
     x = layers.Dense(128, activation="relu", name="dense_hidden")(x)
     x = layers.Dropout(0.25, name="dropout_2")(x)
-    outputs = layers.Dense(1, activation="sigmoid", name="pneumonia_prob")(x)
+    outputs = layers.Dense(NUM_CLASSES, activation="softmax", name="class_probs")(x)
     model = keras.Model(inputs, outputs, name="carevision_effnetb0")
     return model, backbone
 
@@ -277,12 +277,9 @@ def _build_model() -> tuple[keras.Model, keras.Model]:
 def _compile_model(model: keras.Model, learning_rate: float) -> None:
     model.compile(
         optimizer=keras.optimizers.Adam(learning_rate=learning_rate),
-        loss="binary_crossentropy",
+        loss="sparse_categorical_crossentropy",
         metrics=[
-            keras.metrics.BinaryAccuracy(name="accuracy"),
-            keras.metrics.Precision(name="precision"),
-            keras.metrics.Recall(name="recall"),
-            keras.metrics.AUC(name="auc"),
+            keras.metrics.SparseCategoricalAccuracy(name="accuracy"),
         ],
     )
 
@@ -292,21 +289,21 @@ def _create_callbacks(output_path: Path) -> list[keras.callbacks.Callback]:
     return [
         keras.callbacks.ModelCheckpoint(
             filepath=str(output_path),
-            monitor="val_auc",
+            monitor="val_accuracy",
             mode="max",
             save_best_only=True,
             save_weights_only=False,
             verbose=1,
         ),
         keras.callbacks.EarlyStopping(
-            monitor="val_auc",
+            monitor="val_accuracy",
             mode="max",
             patience=6,
             restore_best_weights=True,
             verbose=1,
         ),
         keras.callbacks.ReduceLROnPlateau(
-            monitor="val_auc",
+            monitor="val_accuracy",
             mode="max",
             factor=0.5,
             patience=2,
@@ -327,8 +324,8 @@ class EpochMetricsLogger(keras.callbacks.Callback):
             f"[epoch {epoch + 1}] "
             f"train_loss={logs.get('loss', float('nan')):.4f} "
             f"val_loss={logs.get('val_loss', float('nan')):.4f} "
-            f"train_auc={logs.get('auc', float('nan')):.4f} "
-            f"val_auc={logs.get('val_auc', float('nan')):.4f}"
+            f"train_acc={logs.get('accuracy', float('nan')):.4f} "
+            f"val_acc={logs.get('val_accuracy', float('nan')):.4f}"
         )
 
 
@@ -358,7 +355,7 @@ def _save_history_plot(history: dict[str, list[float]], plot_path: Path) -> None
     plt.plot(epochs, history.get("val_loss", []), label="val")
     plt.title("Loss")
     plt.xlabel("Epoch")
-    plt.ylabel("Binary cross-entropy")
+    plt.ylabel("Sparse categorical cross-entropy")
     plt.legend()
 
     plt.subplot(2, 2, 2)
@@ -370,22 +367,14 @@ def _save_history_plot(history: dict[str, list[float]], plot_path: Path) -> None
     plt.legend()
 
     plt.subplot(2, 2, 3)
-    plt.plot(epochs, history.get("auc", []), label="train")
-    plt.plot(epochs, history.get("val_auc", []), label="val")
-    plt.title("AUC")
-    plt.xlabel("Epoch")
-    plt.ylabel("AUC")
-    plt.legend()
+    plt.axis("off")
+    plt.title("Classes")
+    plt.text(0.1, 0.5, "\n".join(f"{i}: {name}" for i, name in enumerate(CLASS_NAMES)), fontsize=12)
 
     plt.subplot(2, 2, 4)
-    plt.plot(epochs, history.get("precision", []), label="train precision")
-    plt.plot(epochs, history.get("recall", []), label="train recall")
-    plt.plot(epochs, history.get("val_precision", []), label="val precision")
-    plt.plot(epochs, history.get("val_recall", []), label="val recall")
-    plt.title("Precision / Recall")
-    plt.xlabel("Epoch")
-    plt.ylabel("Score")
-    plt.legend(fontsize=8)
+    plt.axis("off")
+    plt.title("Decode rule")
+    plt.text(0.1, 0.5, "prediction = argmax(softmax)", fontsize=12)
 
     plt.tight_layout()
     plot_path.parent.mkdir(parents=True, exist_ok=True)
@@ -396,51 +385,47 @@ def _save_history_plot(history: dict[str, list[float]], plot_path: Path) -> None
 
 def _evaluate_test_set(model: keras.Model, test_ds: tf.data.Dataset) -> None:
     y_true_batches: list[np.ndarray] = []
+    y_pred_batches: list[np.ndarray] = []
     y_prob_batches: list[np.ndarray] = []
 
     for images, labels in test_ds:
-        probs = model.predict(images, verbose=0).reshape(-1)
+        probs = model.predict(images, verbose=0)
         y_prob_batches.append(probs.astype(np.float32))
+        y_pred_batches.append(np.argmax(probs, axis=1).astype(np.int32))
         y_true_batches.append(tf.reshape(labels, [-1]).numpy().astype(np.int32))
 
     y_true = np.concatenate(y_true_batches)
+    y_pred = np.concatenate(y_pred_batches)
     y_prob = np.concatenate(y_prob_batches)
-    y_pred = (y_prob >= 0.5).astype(np.int32)
 
-    metrics = _binary_metrics(y_true, y_pred)
-    cm = np.array(
-        [
-            [metrics["tn"], metrics["fp"]],
-            [metrics["fn"], metrics["tp"]],
-        ],
-        dtype=np.int32,
-    )
+    metrics = _multiclass_metrics(y_true, y_pred)
+    cm = metrics["confusion_matrix"]
 
-    print("\n--- Test metrics (threshold=0.50) ---")
+    print("\n--- Test metrics (argmax) ---")
     print(f"Accuracy:  {metrics['accuracy']:.4f}")
-    print(f"Precision: {metrics['precision']:.4f}")
-    print(f"Recall:    {metrics['recall']:.4f}")
-    print(f"F1:        {metrics['f1']:.4f}")
+    print(f"Macro F1:  {metrics['macro_f1']:.4f}")
 
+    header = " " * 16 + "".join(f"{name:>12}" for name in CLASS_NAMES)
     print("\nConfusion Matrix (rows=actual, cols=predicted)")
-    print("                NORMAL   PNEUMONIA")
-    print(f"Actual NORMAL   {cm[0, 0]:>6d}     {cm[0, 1]:>6d}")
-    print(f"Actual PNEUMONIA{cm[1, 0]:>6d}     {cm[1, 1]:>6d}")
+    print(header)
+    for i, name in enumerate(CLASS_NAMES):
+        row = "".join(f"{int(cm[i, j]):>12d}" for j in range(NUM_CLASSES))
+        print(f"Actual {name:<8}{row}")
 
     print("\nClassification Report")
     print(_classification_report(y_true, y_pred))
 
-    print("\nRaw output statistics")
-    print(f"min:    {float(np.min(y_prob)):.6f}")
-    print(f"max:    {float(np.max(y_prob)):.6f}")
-    print(f"mean:   {float(np.mean(y_prob)):.6f}")
-    print(f"median: {float(np.median(y_prob)):.6f}")
+    print("\nWinning-class probability statistics")
+    win_probs = np.max(y_prob, axis=1)
+    print(f"min:    {float(np.min(win_probs)):.6f}")
+    print(f"max:    {float(np.max(win_probs)):.6f}")
+    print(f"mean:   {float(np.mean(win_probs)):.6f}")
+    print(f"median: {float(np.median(win_probs)):.6f}")
 
-    pred_normal = int(np.sum(y_pred == 0))
-    pred_pneumonia = int(np.sum(y_pred == 1))
     print("\nPrediction distribution")
-    print(f"predicted NORMAL:    {pred_normal}")
-    print(f"predicted PNEUMONIA: {pred_pneumonia}")
+    for name in CLASS_NAMES:
+        count = int(np.sum(y_pred == CLASS_INDICES[name]))
+        print(f"predicted {name}: {count}")
 
 
 def main() -> None:
@@ -451,7 +436,7 @@ def main() -> None:
     print(f"Dataset: {args.dataset_dir.resolve()}")
     print(f"Best model output: {args.output.resolve()}")
     print("Model: EfficientNetB0 transfer learning")
-    print("Class mapping: NORMAL=0, PNEUMONIA=1")
+    print(f"Class mapping: {dict(CLASS_INDICES)}")
     print(f"Preprocessing mode: {preprocessing_mode()}")
 
     _print_split_counts(args.dataset_dir)
@@ -467,12 +452,12 @@ def main() -> None:
     val_split_counts = _dataset_label_counts(val_ds)
     print("\n--- Effective split counts (from dataset/train with validation_split=0.2) ---")
     print(
-        f"train:      NORMAL={train_split_counts['NORMAL']}  "
-        f"PNEUMONIA={train_split_counts['PNEUMONIA']}"
+        "train:      "
+        + "  ".join(f"{name}={train_split_counts[name]}" for name in CLASS_NAMES)
     )
     print(
-        f"validation: NORMAL={val_split_counts['NORMAL']}  "
-        f"PNEUMONIA={val_split_counts['PNEUMONIA']}"
+        "validation: "
+        + "  ".join(f"{name}={val_split_counts[name]}" for name in CLASS_NAMES)
     )
 
     class_weights = _compute_class_weights(train_split_counts)
@@ -480,8 +465,10 @@ def main() -> None:
     if args.use_class_weights:
         print("\nClass weighting: ENABLED")
         print(
-            f"class_weight[0]={class_weights[0]:.4f}, "
-            f"class_weight[1]={class_weights[1]:.4f}"
+            ", ".join(
+                f"class_weight[{CLASS_INDICES[name]}]={class_weights[CLASS_INDICES[name]]:.4f}"
+                for name in CLASS_NAMES
+            )
         )
     else:
         print("\nClass weighting: DISABLED (USE_CLASS_WEIGHTS=false)")

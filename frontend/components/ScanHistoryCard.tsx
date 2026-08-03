@@ -1,9 +1,13 @@
 import Link from "next/link";
 import { ArrowRight, Calendar } from "lucide-react";
 import type { ScanRecord } from "@/lib/types";
-import { formatDate, formatPercent } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 import { DownloadReportButton } from "@/components/DownloadReportButton";
 import { PredictionBadge, SeverityBadge } from "@/components/ui/Badge";
+import {
+  ConfidencePill,
+  PredictionConfidenceBar,
+} from "@/components/ui/PredictionConfidence";
 import { StudyImage } from "@/components/ui/StudyImage";
 import { cn } from "@/lib/utils";
 
@@ -16,8 +20,6 @@ export function ScanHistoryCard({
   scan,
   layout = "grid",
 }: ScanHistoryCardProps) {
-  const isPneumonia = scan.prediction === "Pneumonia";
-  const confidencePct = Math.round(scan.confidence * 100);
   const isList = layout === "list";
 
   return (
@@ -54,16 +56,10 @@ export function ScanHistoryCard({
           <div className="flex flex-wrap items-center gap-1.5">
             <PredictionBadge label={scan.prediction} />
             <SeverityBadge severity={scan.severity} />
-            <span
-              className={cn(
-                "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold tabular-nums ring-1",
-                isPneumonia
-                  ? "bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-500/15 dark:text-rose-300 dark:ring-rose-400/40"
-                  : "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-400/40",
-              )}
-            >
-              {formatPercent(scan.confidence)} confidence
-            </span>
+            <ConfidencePill
+              prediction={scan.prediction}
+              confidence={scan.confidence}
+            />
           </div>
 
           <p className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
@@ -75,34 +71,11 @@ export function ScanHistoryCard({
           </p>
         </header>
 
-        <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50/70 p-3 dark:border-slate-700/70 dark:bg-slate-950/50">
-          <div className="mb-2 flex items-center justify-between text-xs">
-            <span className="font-medium text-slate-500 dark:text-slate-400">
-              Model confidence
-            </span>
-            <span
-              className={cn(
-                "font-bold tabular-nums",
-                isPneumonia
-                  ? "text-rose-700 dark:text-rose-300"
-                  : "text-emerald-700 dark:text-emerald-300",
-              )}
-            >
-              {confidencePct}%
-            </span>
-          </div>
-          <div className="h-2 overflow-hidden rounded-full bg-slate-200/80 dark:bg-slate-700/80">
-            <div
-              className={cn(
-                "h-full rounded-full transition-all",
-                isPneumonia
-                  ? "bg-gradient-to-r from-rose-400 to-rose-600 shadow-[0_0_10px_rgb(244_63_94/0.45)]"
-                  : "bg-gradient-to-r from-emerald-400 to-teal-500 shadow-[0_0_10px_rgb(20_184_166/0.45)]",
-              )}
-              style={{ width: `${confidencePct}%` }}
-            />
-          </div>
-        </div>
+        <PredictionConfidenceBar
+          prediction={scan.prediction}
+          confidence={scan.confidence}
+          className="mt-4"
+        />
 
         {isList ? (
           <div className="mt-4 grid gap-3 border-t border-slate-100 pt-4 lg:grid-cols-2 dark:border-slate-700/70">

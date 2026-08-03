@@ -25,26 +25,25 @@ import { LoadingPanel } from "@/components/ui/LoadingPanel";
 import { fetchScans } from "@/lib/api";
 import { fetchMyScans } from "@/lib/my-scans";
 import type { AuthUser, ScanRecord } from "@/lib/types";
+import { countPredictions } from "@/lib/prediction";
 import { cn, formatDate, getInitials } from "@/lib/utils";
 
 interface ProfileStats {
   total: number;
   pneumonia: number;
+  covid: number;
   normal: number;
   avgConfidence: number;
 }
 
 function computeStats(scans: ScanRecord[]): ProfileStats {
-  const pneumonia = scans.filter((s) => s.prediction === "Pneumonia").length;
-  const avgConfidence =
-    scans.length > 0
-      ? scans.reduce((sum, s) => sum + s.confidence, 0) / scans.length
-      : 0;
+  const counts = countPredictions(scans);
   return {
-    total: scans.length,
-    pneumonia,
-    normal: scans.length - pneumonia,
-    avgConfidence,
+    total: counts.total,
+    pneumonia: counts.pneumonia,
+    covid: counts.covid,
+    normal: counts.normal,
+    avgConfidence: counts.avgConfidence,
   };
 }
 
@@ -311,7 +310,7 @@ export function ProfileView({ user: initialUser }: { user: AuthUser }) {
           {statsLoading ? (
             <LoadingPanel message="Loading your scan statistics…" className="py-10" />
           ) : (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
               <StatCard
                 label="Total scans"
                 value={stats.total}
@@ -330,6 +329,16 @@ export function ProfileView({ user: initialUser }: { user: AuthUser }) {
                 sub={
                   stats.total > 0
                     ? `${Math.round((stats.pneumonia / stats.total) * 100)}% of scans`
+                    : "-"
+                }
+                accent="rose"
+              />
+              <StatCard
+                label="COVID flagged"
+                value={stats.covid}
+                sub={
+                  stats.total > 0
+                    ? `${Math.round((stats.covid / stats.total) * 100)}% of scans`
                     : "-"
                 }
                 accent="rose"

@@ -134,7 +134,7 @@ function ImagingPanel({
 
 export function ScanDetailView({ scan, userRole }: ScanDetailViewProps) {
   const isPatient = userRole === "patient";
-  const isPneumonia = scan.prediction === "Pneumonia";
+  const isAbnormal = scan.prediction !== "Normal";
   const backHref = isPatient ? PATIENT_DASHBOARD_PATH : "/history";
   const reportUrl = isPatient
     ? getMyScanReportUrl(scan.id)
@@ -277,7 +277,7 @@ export function ScanDetailView({ scan, userRole }: ScanDetailViewProps) {
         <Card
           className={cn(
             "border-l-4 p-5 sm:p-6",
-            isPneumonia ? "border-l-rose-500" : "border-l-emerald-500",
+            isAbnormal ? "border-l-rose-500" : "border-l-emerald-500",
           )}
         >
           <div className="grid gap-3 sm:grid-cols-[220px_minmax(0,1fr)] sm:gap-6">
@@ -285,14 +285,14 @@ export function ScanDetailView({ scan, userRole }: ScanDetailViewProps) {
               <FileText
                 className={cn(
                   "h-4 w-4 shrink-0 sm:mt-0.5",
-                  isPneumonia ? "text-rose-600" : "text-emerald-600",
+                  isAbnormal ? "text-rose-600" : "text-emerald-600",
                 )}
                 aria-hidden
               />
               <p
                 className={cn(
                   "text-[11px] font-semibold uppercase tracking-wider",
-                  isPneumonia ? "text-rose-800" : "text-emerald-800",
+                  isAbnormal ? "text-rose-800" : "text-emerald-800",
                 )}
               >
                 Screening Guidance

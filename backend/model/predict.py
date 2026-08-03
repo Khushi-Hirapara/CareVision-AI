@@ -21,22 +21,25 @@ except ImportError:
 def predict_image(
     image_path: str | Path,
     model_path: str | Path = DEFAULT_MODEL_PATH,
-    threshold: float = 0.5,
 ) -> dict[str, object]:
-    classifier = ChestXRayClassifier(Path(model_path), threshold=threshold)
+    classifier = ChestXRayClassifier(Path(model_path))
     result = classifier.predict(Path(image_path))
     return {
         "prediction": result.prediction,
         "confidence": result.confidence,
-        "pneumonia_probability": result.pneumonia_probability,
+        "class_probabilities": result.class_probabilities,
         "normal_probability": result.normal_probability,
+        "pneumonia_probability": result.pneumonia_probability,
+        "covid_probability": result.covid_probability,
         "image": str(Path(image_path).resolve()),
         "model": str(Path(model_path).resolve()),
     }
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Chest X-ray pneumonia inference.")
+    parser = argparse.ArgumentParser(
+        description="Chest X-ray inference (NORMAL / PNEUMONIA / COVID)."
+    )
     parser.add_argument("--image", type=Path, required=True, help="Path to a PNG/JPEG X-ray.")
     parser.add_argument(
         "--model",
@@ -44,18 +47,12 @@ def parse_args() -> argparse.Namespace:
         default=DEFAULT_MODEL_PATH,
         help="Path to chest_xray_model.h5",
     )
-    parser.add_argument(
-        "--threshold",
-        type=float,
-        default=0.5,
-        help="Sigmoid threshold for PNEUMONIA (default 0.5).",
-    )
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    result = predict_image(args.image, model_path=args.model, threshold=args.threshold)
+    result = predict_image(args.image, model_path=args.model)
     print(json.dumps(result, indent=2))
 
 

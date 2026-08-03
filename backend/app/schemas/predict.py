@@ -2,7 +2,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-PredictionLabel = Literal["Normal", "Pneumonia"]
+PredictionLabel = Literal["Normal", "Pneumonia", "COVID"]
 SeverityLabel = Literal["None", "Mild", "Moderate", "Severe"]
 
 
@@ -12,7 +12,9 @@ class PredictResponse(BaseModel):
     confidence: float = Field(..., ge=0.0, le=100.0, description="Model confidence (0–100).")
     severity: SeverityLabel = Field(
         ...,
-        description="AI severity score: None for Normal; Mild/Moderate/Severe for Pneumonia.",
+        description=(
+            "AI severity score: None for Normal; Mild/Moderate/Severe for Pneumonia or COVID."
+        ),
     )
     observed_regions: str = Field(
         ...,

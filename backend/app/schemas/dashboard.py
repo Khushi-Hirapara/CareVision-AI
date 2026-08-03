@@ -10,6 +10,7 @@ class DoctorDashboardStats(BaseModel):
     total_scans: int = Field(..., ge=0)
     normal_scans: int = Field(..., ge=0)
     pneumonia_scans: int = Field(..., ge=0)
+    covid_scans: int = Field(..., ge=0)
     average_confidence: float | None = Field(
         default=None,
         description="Mean model confidence (0–1) across patient scans.",
@@ -21,6 +22,7 @@ class PatientDashboardStats(BaseModel):
     total_scans: int = Field(..., ge=0)
     normal_scans: int = Field(..., ge=0)
     pneumonia_scans: int = Field(..., ge=0)
+    covid_scans: int = Field(..., ge=0)
     average_confidence: float | None = Field(
         default=None,
         description="Mean model confidence (0–1) across your scans.",

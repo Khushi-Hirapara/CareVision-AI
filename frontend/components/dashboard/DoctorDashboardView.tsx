@@ -292,6 +292,12 @@ export function DoctorDashboardView() {
             icon={Activity}
           />
           <DashboardStatCard
+            label="COVID Cases"
+            value={stats.covidScans}
+            accent="amber"
+            icon={Activity}
+          />
+          <DashboardStatCard
             label="Average Confidence"
             value={avgConfidence}
             sub="Across patient scans"
@@ -414,7 +420,7 @@ export function DoctorDashboardView() {
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
             {stats.recentScans.map((scan) => {
-              const isPneumonia = scan.prediction === "Pneumonia";
+              const isAbnormal = scan.prediction !== "Normal";
               return (
                 <Link
                   key={scan.id}
@@ -445,7 +451,7 @@ export function DoctorDashboardView() {
                       <span
                         className={cn(
                           "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums ring-1",
-                          isPneumonia
+                          isAbnormal
                             ? "bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-500/15 dark:text-rose-300 dark:ring-rose-400/40"
                             : "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-400/40",
                         )}

@@ -7,7 +7,7 @@ _FOLLOW_UP_NORMAL = (
     "Consult a healthcare professional if symptoms persist."
 )
 
-_FOLLOW_UP_PNEUMONIA: dict[SeverityLabel, str] = {
+_FOLLOW_UP_ABNORMAL: dict[SeverityLabel, str] = {
     "Mild": (
         "Consult a clinician for clinical correlation.\n"
         "Consider repeat imaging if symptoms continue."
@@ -31,9 +31,9 @@ def build_follow_up_recommendation(
     if prediction == "Normal":
         return _FOLLOW_UP_NORMAL
 
-    if prediction == "Pneumonia":
-        if severity in _FOLLOW_UP_PNEUMONIA:
-            return _FOLLOW_UP_PNEUMONIA[severity]
-        return _FOLLOW_UP_PNEUMONIA["Mild"]
+    if prediction in ("Pneumonia", "COVID"):
+        if severity in _FOLLOW_UP_ABNORMAL:
+            return _FOLLOW_UP_ABNORMAL[severity]
+        return _FOLLOW_UP_ABNORMAL["Mild"]
 
     return _FOLLOW_UP_NORMAL

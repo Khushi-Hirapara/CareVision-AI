@@ -16,15 +16,11 @@ from app.services.ai_findings import build_ai_findings
 from app.services.follow_up_recommendation import build_follow_up_recommendation
 from app.services.image_quality import validate_image_quality
 from app.services.observed_regions import build_observed_regions
+from app.services.prediction_labels import to_api_label
 from app.services.recommendations import build_recommendation
 from app.services.severity import SeverityLabel, compute_severity
 from app.services.upload import to_storage_path
 logger = logging.getLogger(__name__)
-
-_MODEL_LABEL_TO_API: dict[str, PredictionLabel] = {
-    "NORMAL": "Normal",
-    "PNEUMONIA": "Pneumonia",
-}
 
 
 @dataclass(frozen=True)
@@ -74,17 +70,13 @@ def run_prediction(image_path: Path, settings: Settings) -> PredictionResult:
         ) from exc
 
     logger.info(
-        "Prediction pipeline: raw_sigmoid_output=%.6f pneumonia_probability=%.6f "
-        "normal_probability=%.6f threshold=%.2f final_prediction=%s confidence=%.2f%%",
-        inference.raw_output,
-        inference.pneumonia_probability,
-        inference.normal_probability,
-        settings.prediction_threshold,
+        "Prediction pipeline: probs=%s final_prediction=%s confidence=%.2f%%",
+        inference.class_probabilities,
         inference.prediction,
         inference.confidence,
     )
 
-    prediction = _MODEL_LABEL_TO_API.get(inference.prediction)
+    prediction = to_api_label(inference.prediction)
     if prediction is None:
         msg = f"Unexpected model label: {inference.prediction}"
         logger.error(msg)

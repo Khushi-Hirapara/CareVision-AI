@@ -23,6 +23,7 @@ const FILTER_OPTIONS: { value: PredictionFilter; label: string }[] = [
   { value: "all", label: "All results" },
   { value: "Normal", label: "Normal" },
   { value: "Pneumonia", label: "Pneumonia" },
+  { value: "COVID", label: "COVID" },
 ];
 
 export function ScanHistoryFilters({

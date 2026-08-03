@@ -23,6 +23,7 @@ def doctor_dashboard_stats(
         total_scans=raw["total_scans"],
         normal_scans=raw["normal_scans"],
         pneumonia_scans=raw["pneumonia_scans"],
+        covid_scans=raw["covid_scans"],
         average_confidence=raw["average_confidence"],
         recent_scans=[ScanResponse.model_validate(scan) for scan in raw["recent_scans"]],
     )

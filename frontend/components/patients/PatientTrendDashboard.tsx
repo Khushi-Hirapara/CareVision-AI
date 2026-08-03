@@ -174,7 +174,7 @@ export function PatientTrendDashboard({ patientId }: PatientTrendDashboardProps)
             <DashboardStatCard
               label="Average confidence"
               value={`${trends.summary.averageConfidencePct}%`}
-              sub={`${trends.summary.normalScans} normal · ${trends.summary.pneumoniaScans} pneumonia`}
+              sub={`${trends.summary.normalScans} normal · ${trends.summary.pneumoniaScans} pneumonia · ${trends.summary.covidScans} COVID`}
               accent="cyan"
               icon={Crosshair}
             />

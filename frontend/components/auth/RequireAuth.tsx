@@ -30,7 +30,11 @@ export function RequireAuth({ children }: RequireAuthProps) {
   }
 
   if (!user) {
-    return null;
+    return (
+      <div className="page-shell flex min-h-[50vh] items-center justify-center px-4">
+        <LoadingPanel message="Redirecting to sign in…" />
+      </div>
+    );
   }
 
   return children;

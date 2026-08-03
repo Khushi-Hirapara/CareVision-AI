@@ -7,8 +7,8 @@ AI_SCREENING_DISCLAIMER = (
 )
 
 _FINDINGS_NORMAL = (
-    "No pneumonia-like opacity pattern was identified on this chest X-ray screening. "
-    "Clinical correlation is recommended if symptoms are present."
+    "No pneumonia-like or COVID-like opacity pattern was identified on this chest X-ray "
+    "screening. Clinical correlation is recommended if symptoms are present."
 )
 
 _FINDINGS_PNEUMONIA: dict[SeverityLabel, str] = {
@@ -26,6 +26,21 @@ _FINDINGS_PNEUMONIA: dict[SeverityLabel, str] = {
     ),
 }
 
+_FINDINGS_COVID: dict[SeverityLabel, str] = {
+    "Mild": (
+        "Pattern may be consistent with early or mild COVID-19–related changes. "
+        "Clinical correlation is recommended."
+    ),
+    "Moderate": (
+        "Pattern is consistent with possible COVID-19–related opacity. "
+        "Clinical correlation is recommended."
+    ),
+    "Severe": (
+        "Pattern strongly suggests significant COVID-19–related opacity. "
+        "Urgent clinical correlation is recommended."
+    ),
+}
+
 
 def build_ai_findings(prediction: PredictionLabel, severity: SeverityLabel) -> str:
     """Return a short findings summary for the given prediction and severity."""
@@ -36,5 +51,10 @@ def build_ai_findings(prediction: PredictionLabel, severity: SeverityLabel) -> s
         if severity in _FINDINGS_PNEUMONIA:
             return _FINDINGS_PNEUMONIA[severity]
         return _FINDINGS_PNEUMONIA["Mild"]
+
+    if prediction == "COVID":
+        if severity in _FINDINGS_COVID:
+            return _FINDINGS_COVID[severity]
+        return _FINDINGS_COVID["Mild"]
 
     return _FINDINGS_NORMAL

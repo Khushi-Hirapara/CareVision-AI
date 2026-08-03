@@ -66,6 +66,12 @@ export function DoctorDashboard({ stats }: DoctorDashboardProps) {
           icon={Activity}
         />
         <DashboardStatCard
+          label="COVID Cases"
+          value={stats.covidScans}
+          accent="amber"
+          icon={Activity}
+        />
+        <DashboardStatCard
           label="Average Confidence"
           value={avgConfidence}
           sub="Across patient scans"

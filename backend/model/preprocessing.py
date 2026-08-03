@@ -2,10 +2,9 @@
 Shared class labels and image preprocessing for training and inference.
 
 Training (`train_model.py`):
-  - `image_dataset_from_directory` with `class_names=["NORMAL", "PNEUMONIA"]`
-  - `label_mode="binary"` → NORMAL=0, PNEUMONIA=1
-  - Val/test: uint8 RGB resize via Keras loader, then `/255.0`
-  - Model output: sigmoid = P(PNEUMONIA) = P(class 1)
+  - `image_dataset_from_directory` with `class_names=["NORMAL", "PNEUMONIA", "COVID"]`
+  - `label_mode="int"` → NORMAL=0, PNEUMONIA=1, COVID=2
+  - Model output: softmax over 3 classes; prediction = argmax
 
 Inference must use the same loader + scaling (no augmentation).
 """
@@ -19,10 +18,10 @@ import numpy as np
 from tensorflow.keras.applications.efficientnet import preprocess_input as efficientnet_preprocess_input
 from tensorflow.keras.utils import img_to_array, load_img
 
-CLASS_NAMES: tuple[str, ...] = ("NORMAL", "PNEUMONIA")
-CLASS_INDICES: dict[str, int] = {"NORMAL": 0, "PNEUMONIA": 1}
-INDEX_TO_CLASS: dict[int, str] = {0: "NORMAL", 1: "PNEUMONIA"}
-PNEUMONIA_THRESHOLD: float = 0.5
+CLASS_NAMES: tuple[str, ...] = ("NORMAL", "PNEUMONIA", "COVID")
+CLASS_INDICES: dict[str, int] = {"NORMAL": 0, "PNEUMONIA": 1, "COVID": 2}
+INDEX_TO_CLASS: dict[int, str] = {0: "NORMAL", 1: "PNEUMONIA", 2: "COVID"}
+NUM_CLASSES: int = len(CLASS_NAMES)
 MODEL_BACKBONE: str = os.getenv("MODEL_BACKBONE", "efficientnet").strip().lower()
 
 
@@ -60,19 +59,18 @@ def preprocess_image(image_path: Path, img_size: int = 224) -> np.ndarray:
     return preprocess_array_for_model(batch)
 
 
-def decode_prediction(raw_output: float, threshold: float = PNEUMONIA_THRESHOLD) -> tuple[str, float]:
+def decode_prediction(class_probs: np.ndarray | list[float]) -> tuple[str, float]:
     """
-    Map raw sigmoid output to model label and winning-class confidence (0–100).
+    Map softmax class probabilities to model label and winning-class confidence (0–100).
 
-    pneumonia_prob >= threshold → PNEUMONIA (maps to API "Pneumonia")
-    else → NORMAL (maps to API "Normal")
-
-    Confidence is the predicted class probability × 100.
+    Prediction = argmax over [NORMAL, PNEUMONIA, COVID].
+    Confidence is the winning class probability × 100.
     """
-    pneumonia_prob = float(raw_output)
-    normal_prob = 1.0 - pneumonia_prob
-
-    if pneumonia_prob >= threshold:
-        return "PNEUMONIA", round(pneumonia_prob * 100, 2)
-
-    return "NORMAL", round(normal_prob * 100, 2)
+    probs = np.asarray(class_probs, dtype=np.float64).reshape(-1)
+    if probs.size != NUM_CLASSES:
+        raise ValueError(
+            f"Expected {NUM_CLASSES} class probabilities, got shape {probs.shape}"
+        )
+    class_index = int(np.argmax(probs))
+    confidence = float(probs[class_index]) * 100.0
+    return INDEX_TO_CLASS[class_index], round(confidence, 2)

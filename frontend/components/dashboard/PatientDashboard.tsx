@@ -36,6 +36,11 @@ export function PatientDashboard({ stats }: PatientDashboardProps) {
           accent="rose"
         />
         <DashboardStatCard
+          label="COVID Cases"
+          value={stats.covidScans}
+          accent="amber"
+        />
+        <DashboardStatCard
           label="Average Confidence"
           value={avgConfidence}
           sub="Across your studies"

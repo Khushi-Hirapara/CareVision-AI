@@ -261,12 +261,16 @@ class GradCamGenerator:
         predictions: tf.Tensor,
         target_class: str,
     ) -> tf.Tensor:
-        prob_pneumonia = predictions[:, 0]
-        if target_class.upper() == "PNEUMONIA":
-            return prob_pneumonia
-        if target_class.upper() == "NORMAL":
-            return 1.0 - prob_pneumonia
-        raise ValueError(f"Unsupported target class: {target_class}")
+        try:
+            from model.preprocessing import CLASS_INDICES
+        except ImportError:
+            from preprocessing import CLASS_INDICES
+
+        class_key = target_class.upper()
+        if class_key not in CLASS_INDICES:
+            raise ValueError(f"Unsupported target class: {target_class}")
+        class_index = CLASS_INDICES[class_key]
+        return predictions[:, class_index]
 
     def compute_heatmap(
         self,

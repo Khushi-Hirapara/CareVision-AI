@@ -19,7 +19,7 @@ try:
     from model.preprocessing import (
         CLASS_INDICES,
         CLASS_NAMES,
-        PNEUMONIA_THRESHOLD,
+        NUM_CLASSES,
         preprocess_image,
         preprocessing_mode,
     )
@@ -28,7 +28,7 @@ except ImportError:
     from preprocessing import (
         CLASS_INDICES,
         CLASS_NAMES,
-        PNEUMONIA_THRESHOLD,
+        NUM_CLASSES,
         preprocess_image,
         preprocessing_mode,
     )
@@ -40,7 +40,9 @@ IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp", ".gif"}
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Evaluate chest X-ray pneumonia classifier.")
+    parser = argparse.ArgumentParser(
+        description="Evaluate chest X-ray classifier (NORMAL / PNEUMONIA / COVID)."
+    )
     parser.add_argument(
         "--model",
         type=Path,
@@ -51,15 +53,9 @@ def parse_args() -> argparse.Namespace:
         "--dataset-dir",
         type=Path,
         default=DEFAULT_DATASET_DIR,
-        help="Dataset root containing test/NORMAL and test/PNEUMONIA.",
+        help="Dataset root containing test/NORMAL, test/PNEUMONIA, and test/COVID.",
     )
     parser.add_argument("--batch-size", type=int, default=32, help="Inference batch size.")
-    parser.add_argument(
-        "--threshold",
-        type=float,
-        default=PNEUMONIA_THRESHOLD,
-        help="Sigmoid threshold. raw_output >= threshold => PNEUMONIA.",
-    )
     return parser.parse_args()
 
 
@@ -96,47 +92,46 @@ def _load_test_split(dataset_dir: Path) -> tuple[list[Path], np.ndarray, dict[st
     return image_paths, np.asarray(labels, dtype=np.int32), counts
 
 
-def _predict_raw_outputs(
+def _predict_class_probs(
     model: ChestXRayClassifier,
     image_paths: list[Path],
     batch_size: int,
 ) -> np.ndarray:
     keras_model = model.get_model()
-    raw_outputs: list[np.ndarray] = []
+    prob_batches: list[np.ndarray] = []
 
     for start in range(0, len(image_paths), batch_size):
         chunk = image_paths[start : start + batch_size]
         batch = np.concatenate([preprocess_image(path, model.img_size) for path in chunk], axis=0)
-        chunk_pred = keras_model.predict(batch, verbose=0).reshape(-1)
-        raw_outputs.append(chunk_pred.astype(np.float32))
+        chunk_pred = keras_model.predict(batch, verbose=0)
+        prob_batches.append(np.asarray(chunk_pred, dtype=np.float32))
 
-    return np.concatenate(raw_outputs, axis=0)
+    return np.concatenate(prob_batches, axis=0)
 
 
 def _safe_div(num: float, den: float) -> float:
     return num / den if den else 0.0
 
 
-def _binary_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict[str, float | int]:
-    tp = int(np.sum((y_true == 1) & (y_pred == 1)))
-    tn = int(np.sum((y_true == 0) & (y_pred == 0)))
-    fp = int(np.sum((y_true == 0) & (y_pred == 1)))
-    fn = int(np.sum((y_true == 1) & (y_pred == 0)))
+def _multiclass_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict[str, object]:
+    cm = np.zeros((NUM_CLASSES, NUM_CLASSES), dtype=np.int32)
+    for true_idx, pred_idx in zip(y_true.tolist(), y_pred.tolist()):
+        cm[int(true_idx), int(pred_idx)] += 1
 
-    accuracy = _safe_div(tp + tn, tp + tn + fp + fn)
-    precision = _safe_div(tp, tp + fp)
-    recall = _safe_div(tp, tp + fn)
-    f1 = _safe_div(2 * precision * recall, precision + recall)
+    accuracy = _safe_div(float(np.trace(cm)), float(np.sum(cm)))
+    f1_scores: list[float] = []
+    for class_id in range(NUM_CLASSES):
+        tp = int(cm[class_id, class_id])
+        fp = int(np.sum(cm[:, class_id]) - tp)
+        fn = int(np.sum(cm[class_id, :]) - tp)
+        precision = _safe_div(tp, tp + fp)
+        recall = _safe_div(tp, tp + fn)
+        f1_scores.append(_safe_div(2 * precision * recall, precision + recall))
 
     return {
-        "tp": tp,
-        "tn": tn,
-        "fp": fp,
-        "fn": fn,
+        "confusion_matrix": cm,
         "accuracy": accuracy,
-        "precision": precision,
-        "recall": recall,
-        "f1": f1,
+        "macro_f1": float(np.mean(f1_scores)) if f1_scores else 0.0,
     }
 
 
@@ -175,9 +170,9 @@ def _classification_report(y_true: np.ndarray, y_pred: np.ndarray) -> str:
     macro_precision = float(np.mean(precisions))
     macro_recall = float(np.mean(recalls))
     macro_f1 = float(np.mean(f1_scores))
-    weighted_precision = float(np.average(precisions, weights=supports))
-    weighted_recall = float(np.average(recalls, weights=supports))
-    weighted_f1 = float(np.average(f1_scores, weights=supports))
+    weighted_precision = float(np.average(precisions, weights=supports)) if total else 0.0
+    weighted_recall = float(np.average(recalls, weights=supports)) if total else 0.0
+    weighted_f1 = float(np.average(f1_scores, weights=supports)) if total else 0.0
 
     lines.append("-" * len(header))
     lines.append(
@@ -195,44 +190,34 @@ def main() -> None:
     print("\n=== CareVision AI Model Evaluation ===")
     print(f"Model path:   {args.model.resolve()}")
     print(f"Dataset path: {args.dataset_dir.resolve()}")
-    print(f"Threshold:    {args.threshold:.2f}")
     print(f"Class mapping: {CLASS_INDICES}")
     print(f"Preprocessing mode: {preprocessing_mode()}")
-    print("Rule: raw_output >= threshold => PNEUMONIA (1), else NORMAL (0)")
+    print("Rule: prediction = argmax(softmax)")
 
     image_paths, y_true, counts = _load_test_split(args.dataset_dir)
     print("\n--- Test Image Counts ---")
-    print(f"NORMAL images:    {counts['NORMAL']}")
-    print(f"PNEUMONIA images: {counts['PNEUMONIA']}")
+    for name in CLASS_NAMES:
+        print(f"{name} images: {counts[name]}")
     print(f"Total images:     {len(image_paths)}")
 
-    classifier = ChestXRayClassifier(
-        model_path=args.model,
-        threshold=args.threshold,
-    )
-    raw_outputs = _predict_raw_outputs(classifier, image_paths, args.batch_size)
-    y_pred = (raw_outputs >= args.threshold).astype(np.int32)
+    classifier = ChestXRayClassifier(model_path=args.model)
+    class_probs = _predict_class_probs(classifier, image_paths, args.batch_size)
+    y_pred = np.argmax(class_probs, axis=1).astype(np.int32)
 
-    metrics = _binary_metrics(y_true, y_pred)
-    cm = np.array(
-        [
-            [metrics["tn"], metrics["fp"]],
-            [metrics["fn"], metrics["tp"]],
-        ],
-        dtype=np.int32,
-    )
+    metrics = _multiclass_metrics(y_true, y_pred)
+    cm = metrics["confusion_matrix"]
 
     print("\n--- Core Metrics ---")
     print(f"Accuracy:  {metrics['accuracy']:.4f}")
-    print(f"Precision: {metrics['precision']:.4f}")
-    print(f"Recall:    {metrics['recall']:.4f}")
-    print(f"F1 Score:  {metrics['f1']:.4f}")
+    print(f"Macro F1:  {metrics['macro_f1']:.4f}")
 
     print("\n--- Confusion Matrix ---")
     print("Rows = Actual, Columns = Predicted")
-    print("                NORMAL   PNEUMONIA")
-    print(f"Actual NORMAL   {cm[0, 0]:>6d}     {cm[0, 1]:>6d}")
-    print(f"Actual PNEUMONIA{cm[1, 0]:>6d}     {cm[1, 1]:>6d}")
+    header = " " * 16 + "".join(f"{name:>12}" for name in CLASS_NAMES)
+    print(header)
+    for i, name in enumerate(CLASS_NAMES):
+        row = "".join(f"{int(cm[i, j]):>12d}" for j in range(NUM_CLASSES))
+        print(f"Actual {name:<8}{row}")
 
     print("\n--- Classification Report ---")
     print(_classification_report(y_true, y_pred))

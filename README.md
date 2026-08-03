@@ -260,19 +260,21 @@ See [frontend/README.md](frontend/README.md) for UI-specific details.
 
 ### Dataset
 
-Place chest X-ray images under `dataset/` using the Kaggle **Chest X-Ray Images (Pneumonia)** layout. See [dataset/README.md](dataset/README.md) for download and `prepare_dataset.py` instructions.
+Place chest X-ray images under `dataset/` with three classes. See [dataset/README.md](dataset/README.md).
 
 ```
 dataset/
   train/
     NORMAL/
     PNEUMONIA/
+    COVID/
   test/
     NORMAL/
     PNEUMONIA/
+    COVID/
 ```
 
-> Training uses an **80/20 split from `dataset/train`** for train/validation. The optional `dataset/val` folder is not required by the default training script.
+> Training uses an **80/20 split from `dataset/train`** for train/validation. The optional `dataset/val` folder is not required by the default training script. Each class needs at least one image in `train/` and `test/`.
 
 ### Train
 
@@ -282,7 +284,7 @@ cd backend
 python model\train_model.py
 ```
 
-**Architecture:** EfficientNetB0 (ImageNet weights), frozen head training, then fine-tuning of top layers. Images are preprocessed with `efficientnet.preprocess_input` at **224×224** RGB.
+**Architecture:** EfficientNetB0 (ImageNet weights), frozen head training, then fine-tuning of top layers. Softmax over **NORMAL / PNEUMONIA / COVID**. Images are preprocessed with `efficientnet.preprocess_input` at **224×224** RGB.
 
 | Artifact | Location |
 |----------|----------|
@@ -299,12 +301,11 @@ python model\train_model.py --epochs 20 --fine-tune-epochs 10
 
 ```powershell
 python model\evaluate_model.py
-python model\evaluate_model.py --threshold 0.90
 python model\evaluate_thresholds.py
 python model\debug_model_predictions.py
 ```
 
-Keep `PREDICTION_THRESHOLD` in `.env` aligned with the threshold you evaluate against.
+Prediction uses **argmax over softmax** (NORMAL / PNEUMONIA / COVID). `PREDICTION_THRESHOLD` is unused for the new 3-class model.
 
 ---
 

@@ -6,15 +6,21 @@ interface BadgeProps {
   className?: string;
 }
 
+const PREDICTION_STYLES: Record<PredictionLabel, string> = {
+  Normal:
+    "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-400/40 dark:shadow-[0_0_12px_rgb(16_185_129/0.2)]",
+  Pneumonia:
+    "bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-500/15 dark:text-rose-300 dark:ring-rose-400/40 dark:shadow-[0_0_12px_rgb(244_63_94/0.2)]",
+  COVID:
+    "bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-500/15 dark:text-rose-300 dark:ring-rose-400/40 dark:shadow-[0_0_12px_rgb(244_63_94/0.2)]",
+};
+
 export function PredictionBadge({ label, className }: BadgeProps) {
-  const isPneumonia = label === "Pneumonia";
   return (
     <span
       className={cn(
         "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1",
-        isPneumonia
-          ? "bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-500/15 dark:text-rose-300 dark:ring-rose-400/40 dark:shadow-[0_0_12px_rgb(244_63_94/0.2)]"
-          : "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-400/40 dark:shadow-[0_0_12px_rgb(16_185_129/0.2)]",
+        PREDICTION_STYLES[label] ?? PREDICTION_STYLES.Normal,
         className,
       )}
     >

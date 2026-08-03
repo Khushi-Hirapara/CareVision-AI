@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Crosshair, MapPin, Percent, ScanSearch, Sparkles } from "lucide-react";
 import type { PredictionLabel } from "@/lib/types";
+import { isAbnormalPrediction } from "@/lib/prediction";
 import {
   formatSuspiciousRegion,
   parseAffectedArea,
@@ -14,7 +15,7 @@ interface ExplainabilityPanelProps {
   prediction: PredictionLabel;
   observedRegions: string;
   className?: string;
-  /** Vertical stack for narrow sidebars; grid for wide image panels. */
+  /** Vertical stack for narrow panels; side-by-side only when space allows. */
   layout?: "stack" | "grid";
   showTitle?: boolean;
 }
@@ -34,20 +35,22 @@ function IconBadge({
   tone?: "rose" | "teal" | "amber" | "slate";
 }) {
   const tones = {
-    rose: "bg-rose-100 text-rose-600 ring-rose-200/60 dark:bg-rose-500/15 dark:text-rose-300 dark:ring-rose-400/30",
-    teal: "bg-teal-100 text-teal-600 ring-teal-200/60 dark:bg-teal-500/15 dark:text-teal-300 dark:ring-teal-400/30",
-    amber: "bg-amber-100 text-amber-600 ring-amber-200/60 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-400/30",
-    slate: "bg-slate-100 text-slate-600 ring-slate-200/60 dark:bg-slate-700 dark:text-slate-300 dark:ring-slate-600",
+    rose: "bg-rose-100 text-rose-600 ring-rose-200/70 dark:bg-rose-500/20 dark:text-rose-300 dark:ring-rose-400/40",
+    teal: "bg-teal-100 text-teal-600 ring-teal-200/70 dark:bg-teal-500/20 dark:text-teal-300 dark:ring-teal-400/40",
+    amber:
+      "bg-amber-100 text-amber-600 ring-amber-200/70 dark:bg-amber-500/20 dark:text-amber-300 dark:ring-amber-400/40",
+    slate:
+      "bg-slate-100 text-slate-600 ring-slate-200/70 dark:bg-slate-700 dark:text-slate-300 dark:ring-slate-500/50",
   };
 
   return (
     <span
       className={cn(
-        "flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ring-1 sm:h-9 sm:w-9",
+        "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ring-1",
         tones[tone],
       )}
     >
-      <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden />
+      <Icon className="h-4 w-4" aria-hidden />
     </span>
   );
 }
@@ -56,18 +59,15 @@ function AreaProgressBar({ value }: { value: number }) {
   const clamped = Math.max(0, Math.min(100, value));
   const tone =
     clamped >= 40
-      ? "bg-rose-500"
+      ? "bg-rose-500 dark:bg-rose-400"
       : clamped >= 20
-        ? "bg-orange-500"
-        : "bg-amber-500";
+        ? "bg-orange-500 dark:bg-orange-400"
+        : "bg-amber-500 dark:bg-amber-400";
 
   return (
-    <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700/80">
+    <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-200/90 dark:bg-slate-700">
       <div
-        className={cn(
-          "h-full rounded-full transition-all duration-700 ease-out",
-          tone,
-        )}
+        className={cn("h-full rounded-full transition-all duration-700 ease-out", tone)}
         style={{ width: `${clamped}%` }}
       />
     </div>
@@ -84,7 +84,7 @@ function PanelShell({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-2xl border border-slate-200/90 bg-gradient-to-br from-slate-50/80 via-white to-slate-50/50 dark:border-slate-700/80 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950",
+        "overflow-hidden rounded-2xl border border-slate-200/90 bg-gradient-to-br from-slate-50/90 via-white to-slate-50/60 shadow-sm dark:border-slate-700/80 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 dark:shadow-black/20",
         className,
       )}
     >
@@ -101,49 +101,43 @@ function RegionHero({
   subtitle?: string | null;
 }) {
   return (
-    <div className="flex items-start gap-3 border-b border-slate-100/80 px-4 py-4 dark:border-slate-700/70 sm:px-5">
+    <div className="flex items-start gap-3 border-b border-slate-100 px-4 py-4 dark:border-slate-700/70 sm:px-5">
       <IconBadge icon={MapPin} tone="rose" />
       <div className="min-w-0 flex-1">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
           Suspicious Region
         </p>
-        <p className="mt-1 break-words text-lg font-bold leading-snug text-slate-900 dark:text-slate-100">
+        <p className="mt-1 break-words text-lg font-bold leading-snug text-slate-900 dark:text-white">
           {region}
         </p>
         {subtitle ? (
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            {subtitle}
-          </p>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{subtitle}</p>
         ) : null}
       </div>
     </div>
   );
 }
 
-function MetricBlock({
+function MetricCard({
   icon: Icon,
   iconTone,
   label,
   children,
-  className,
 }: {
   icon: typeof Percent;
   iconTone?: "rose" | "teal" | "amber" | "slate";
   label: string;
   children: ReactNode;
-  className?: string;
 }) {
   return (
-    <div className={cn("min-w-0 px-4 py-4 sm:px-5", className)}>
-      <div className="flex items-start gap-2.5 sm:gap-3">
+    <div className="min-w-0 rounded-xl border border-slate-200/80 bg-white/80 p-4 dark:border-slate-700/70 dark:bg-slate-950/50">
+      <div className="flex items-center gap-2.5">
         <IconBadge icon={Icon} tone={iconTone ?? "slate"} />
-        <div className="min-w-0 flex-1 overflow-hidden">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
-            {label}
-          </p>
-          <div className="mt-1.5">{children}</div>
-        </div>
+        <p className="min-w-0 flex-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400">
+          {label}
+        </p>
       </div>
+      <div className="mt-3">{children}</div>
     </div>
   );
 }
@@ -154,7 +148,7 @@ function LegacyFallbackCard({ className }: { className?: string }) {
       <div className="flex items-start gap-3 px-4 py-4 sm:px-5">
         <IconBadge icon={Sparkles} tone="amber" />
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
             Grad-CAM Localization
           </p>
           <p className="mt-1 text-base font-semibold text-slate-900 dark:text-slate-100">
@@ -182,7 +176,7 @@ function UnstructuredCard({
       <div className="flex items-start gap-3 px-4 py-4 sm:px-5">
         <IconBadge icon={Crosshair} tone="teal" />
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
             Observed Regions
           </p>
           <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-slate-700 dark:text-slate-300">
@@ -202,7 +196,7 @@ export function ExplainabilityPanel({
   showTitle = true,
 }: ExplainabilityPanelProps) {
   const details = parseAffectedArea(observedRegions);
-  const isPneumonia = prediction === "Pneumonia";
+  const isAbnormal = isAbnormalPrediction(prediction);
   const suspiciousRegion = formatSuspiciousRegion(details.lung, details.lobe);
   const affectedPct = parseInfectedPctNumber(observedRegions);
   const heatmapConfidence = parseHeatmapConfidenceNumber(observedRegions);
@@ -210,18 +204,18 @@ export function ExplainabilityPanel({
   const hasQuantifiedArea = affectedPct != null;
   const isWide = layout === "grid";
 
-  if (!isPneumonia) {
+  if (!isAbnormal) {
     return (
       <PanelShell className={className}>
         <div className="flex items-start gap-3 px-4 py-4 sm:px-5">
           <IconBadge icon={ScanSearch} tone="teal" />
-          <div>
+          <div className="min-w-0">
             <p className="text-base font-semibold text-emerald-800 dark:text-emerald-300">
               No suspicious regions highlighted
             </p>
             <p className="mt-1 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-              Grad-CAM did not localize pneumonia-like opacity for this normal
-              screening result.
+              Grad-CAM did not localize abnormal opacity for this normal screening
+              result.
             </p>
           </div>
         </div>
@@ -241,23 +235,21 @@ export function ExplainabilityPanel({
     return <UnstructuredCard text={details.raw} className={className} />;
   }
 
-  const metricsRow = (
+  const metrics = (
     <div
       className={cn(
-        "grid divide-y divide-slate-100/80 dark:divide-slate-700/70",
-        isWide
-          ? "sm:grid-cols-2 sm:divide-x sm:divide-y-0 sm:divide-slate-100/80 dark:sm:divide-slate-700/70"
-          : "grid-cols-1",
+        "grid gap-3 p-4 sm:p-5",
+        isWide ? "grid-cols-1 xl:grid-cols-2" : "grid-cols-1",
       )}
     >
-      <MetricBlock icon={Percent} iconTone="rose" label="Affected Area">
+      <MetricCard icon={Percent} iconTone="rose" label="Affected Area">
         {hasQuantifiedArea ? (
           <>
             <p className="text-3xl font-bold tabular-nums leading-none text-rose-700 dark:text-rose-300">
               {affectedPct}%
             </p>
             <AreaProgressBar value={affectedPct} />
-            <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+            <p className="mt-2.5 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
               Share of the image with strong Grad-CAM activation
             </p>
           </>
@@ -266,23 +258,23 @@ export function ExplainabilityPanel({
             <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
               {details.infectedPct ?? "Not quantified"}
             </p>
-            <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+            <p className="mt-1.5 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
               Re-analyze to estimate affected area percentage
             </p>
           </>
         )}
-      </MetricBlock>
+      </MetricCard>
 
-      <MetricBlock icon={ScanSearch} iconTone="teal" label="Heatmap Confidence">
+      <MetricCard icon={ScanSearch} iconTone="teal" label="Heatmap Confidence">
         {heatmapConfidence != null ? (
-          <div className="flex flex-col items-start gap-1">
+          <div className="flex items-center gap-4">
             <ConfidenceGauge
               value={heatmapConfidence}
               label=""
               size="sm"
               className="shrink-0"
             />
-            <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+            <p className="min-w-0 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
               Localization strength of the Grad-CAM focus
             </p>
           </div>
@@ -292,7 +284,7 @@ export function ExplainabilityPanel({
             confidence.
           </p>
         )}
-      </MetricBlock>
+      </MetricCard>
     </div>
   );
 
@@ -313,7 +305,7 @@ export function ExplainabilityPanel({
             }
           />
         ) : null}
-        {metricsRow}
+        {metrics}
       </PanelShell>
     </div>
   );

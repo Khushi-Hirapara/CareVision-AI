@@ -15,6 +15,7 @@ import { ScanHistorySkeleton } from "@/components/history/ScanHistorySkeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorAlert } from "@/components/ui/ErrorAlert";
 import { fetchScans } from "@/lib/api";
+import { countPredictions } from "@/lib/prediction";
 import { patientReportsPath } from "@/lib/patients";
 import type { ScanRecord } from "@/lib/types";
 
@@ -98,8 +99,9 @@ export default function HistoryPage() {
   const hasActiveFilters =
     searchQuery.trim().length > 0 || predictionFilter !== "all";
 
-  const pneumoniaCount = scans.filter((s) => s.prediction === "Pneumonia").length;
-  const normalCount = scans.length - pneumoniaCount;
+  const predictionCounts = countPredictions(scans);
+  const { pneumonia: pneumoniaCount, covid: covidCount, normal: normalCount } =
+    predictionCounts;
 
   if (hasPatientFilter) {
     return (
@@ -120,22 +122,19 @@ export default function HistoryPage() {
         />
 
         {!isLoading && !error && scans.length > 0 && (
-          <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-5">
             {[
               { label: "Total scans", value: scans.length, accent: "text-teal-700 dark:text-teal-300" },
               { label: "Normal", value: normalCount, accent: "text-emerald-700 dark:text-emerald-300" },
               { label: "Pneumonia", value: pneumoniaCount, accent: "text-rose-700 dark:text-rose-300" },
+              { label: "COVID", value: covidCount, accent: "text-rose-700 dark:text-rose-300" },
               {
                 label: "Avg. confidence",
                 value:
-                  scans.length > 0
-                    ? `${Math.round(
-                        (scans.reduce((sum, s) => sum + s.confidence, 0) /
-                          scans.length) *
-                          100,
-                      )}%`
+                  predictionCounts.total > 0
+                    ? `${Math.round(predictionCounts.avgConfidence * 100)}%`
                     : "-",
-                accent: "text-amber-700 dark:text-amber-300",
+                accent: "text-slate-700 dark:text-slate-300",
               },
             ].map((stat) => (
               <div

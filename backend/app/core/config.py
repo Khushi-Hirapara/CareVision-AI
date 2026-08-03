@@ -182,7 +182,10 @@ class Settings(BaseSettings):
     prediction_threshold: float = Field(
         default=0.9,
         alias="PREDICTION_THRESHOLD",
-        description="Sigmoid threshold: pneumonia_prob >= value => PNEUMONIA (else NORMAL).",
+        description=(
+            "Deprecated for 3-class softmax models (prediction = argmax). "
+            "Kept for compatibility with older binary checkpoints."
+        ),
     )
     model_confidence_threshold: float = Field(
         default=0.5,
@@ -260,6 +263,14 @@ class Settings(BaseSettings):
     frontend_url: str = Field(
         default="http://localhost:3000",
         alias="FRONTEND_URL",
+    )
+    public_frontend_url: str | None = Field(
+        default=None,
+        alias="PUBLIC_FRONTEND_URL",
+        description=(
+            "Optional public base URL for QR codes / share links "
+            "(e.g. http://192.168.1.10:3000). Falls back to FRONTEND_URL."
+        ),
     )
     invitation_expire_days: int = Field(default=7, alias="INVITATION_EXPIRE_DAYS")
 

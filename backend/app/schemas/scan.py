@@ -23,7 +23,7 @@ class ScanBase(BaseModel):
     confidence: float = Field(..., ge=0.0, le=1.0)
     severity: SeverityLabel = Field(
         default="None",
-        description="AI severity score: None for Normal; Mild/Moderate/Severe for Pneumonia.",
+        description="AI severity score: None for Normal; Mild/Moderate/Severe for Pneumonia or COVID.",
     )
     observed_regions: str = Field(
         ...,
@@ -64,7 +64,7 @@ class ScanCreate(BaseModel):
     confidence: float = Field(..., ge=0.0, le=1.0)
     severity: SeverityLabel = Field(
         default="None",
-        description="AI severity score: None for Normal; Mild/Moderate/Severe for Pneumonia.",
+        description="AI severity score: None for Normal; Mild/Moderate/Severe for Pneumonia or COVID.",
     )
     observed_regions: str = Field(
         ...,

@@ -22,9 +22,9 @@ const modules = [
     tone: "sky" as const,
     title: "COVID-19 Patterns",
     description:
-      "A future chest-radiography module for condition-specific screening and structured reporting.",
-    status: "Planned",
-    live: false,
+      "Three-class chest X-ray screening includes COVID alongside Normal and Pneumonia.",
+    status: "Available now",
+    live: true,
   },
   {
     icon: CircleDot,

@@ -150,6 +150,12 @@ export function PatientDashboardView() {
             icon={Shield}
           />
           <DashboardStatCard
+            label="COVID"
+            value={stats.covidScans}
+            accent="amber"
+            icon={Activity}
+          />
+          <DashboardStatCard
             label="Avg. Confidence"
             value={avgConfidence}
             sub="Across your studies"

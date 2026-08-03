@@ -1,5 +1,6 @@
 """
-Shared TensorFlow inference for chest X-ray pneumonia classification.
+Shared TensorFlow inference for chest X-ray multi-class classification
+(NORMAL / PNEUMONIA / COVID).
 """
 
 from __future__ import annotations
@@ -8,6 +9,7 @@ import logging
 from dataclasses import dataclass
 from pathlib import Path
 
+import numpy as np
 from tensorflow.keras.applications import (
     EfficientNetB0,
     EfficientNetB1,
@@ -23,7 +25,8 @@ from tensorflow.keras.models import Model, load_model
 try:
     from model.preprocessing import (
         CLASS_INDICES,
-        PNEUMONIA_THRESHOLD,
+        CLASS_NAMES,
+        NUM_CLASSES,
         decode_prediction,
         preprocess_image,
         preprocessing_mode,
@@ -31,7 +34,8 @@ try:
 except ImportError:
     from preprocessing import (
         CLASS_INDICES,
-        PNEUMONIA_THRESHOLD,
+        CLASS_NAMES,
+        NUM_CLASSES,
         decode_prediction,
         preprocess_image,
         preprocessing_mode,
@@ -57,24 +61,26 @@ DEFAULT_IMG_SIZE = 224
 
 @dataclass(frozen=True)
 class InferenceOutput:
-    prediction: str  # "NORMAL" | "PNEUMONIA"
+    prediction: str  # "NORMAL" | "PNEUMONIA" | "COVID"
     confidence: float  # winning class probability, 0–100
-    pneumonia_probability: float
+    class_probabilities: dict[str, float]
     normal_probability: float
-    raw_output: float  # sigmoid P(PNEUMONIA)
+    pneumonia_probability: float
+    covid_probability: float
 
 
 class ChestXRayClassifier:
-    """Loads the .h5 model once and runs binary pneumonia inference."""
+    """Loads the .h5 model once and runs 3-class chest X-ray inference."""
 
     def __init__(
         self,
         model_path: Path,
         img_size: int = DEFAULT_IMG_SIZE,
-        threshold: float = PNEUMONIA_THRESHOLD,
+        threshold: float | None = None,
     ) -> None:
         self.model_path = model_path
         self.img_size = img_size
+        # Kept for API compatibility; multi-class uses argmax, not a threshold.
         self.threshold = threshold
         self._model: Model | None = None
 
@@ -83,20 +89,25 @@ class ChestXRayClassifier:
             if not self.model_path.is_file():
                 raise FileNotFoundError(
                     f"Model not found at {self.model_path}. "
-                    "Train with: cd backend/model && python train_model.py"
+                    "Train with: cd backend && python model/train_model.py"
                 )
             self._model = load_model(
                 self.model_path,
                 compile=False,
                 custom_objects=_EFFICIENTNET_CUSTOM_OBJECTS,
             )
+            out_units = int(np.prod(self._model.output_shape[1:]))
+            if out_units != NUM_CLASSES:
+                raise ValueError(
+                    f"Model output has {out_units} units; expected {NUM_CLASSES} "
+                    f"for classes {list(CLASS_NAMES)}. Retrain with train_model.py."
+                )
             logger.info(
                 "Loaded model from %s (layers=%d) class_indices=%s "
-                "threshold=%.2f (raw >= threshold -> PNEUMONIA) preprocess=%s",
+                "decode=argmax(softmax) preprocess=%s",
                 self.model_path,
                 len(self._model.layers),
                 CLASS_INDICES,
-                self.threshold,
                 preprocessing_mode(),
             )
         return self._model
@@ -109,19 +120,16 @@ class ChestXRayClassifier:
         model = self._ensure_loaded()
         batch = preprocess_image(image_path, self.img_size)
 
-        raw_output = float(model.predict(batch, verbose=0)[0][0])
-        pneumonia_prob = raw_output
-        normal_prob = 1.0 - raw_output
-        prediction, confidence = decode_prediction(raw_output, self.threshold)
+        probs = np.asarray(model.predict(batch, verbose=0)[0], dtype=np.float64).reshape(-1)
+        prediction, confidence = decode_prediction(probs)
+        class_probabilities = {
+            name: round(float(probs[CLASS_INDICES[name]]), 4) for name in CLASS_NAMES
+        }
 
         logger.info(
-            "Inference: image=%s raw_sigmoid_output=%.6f pneumonia_probability=%.6f "
-            "normal_probability=%.6f threshold=%.2f final_prediction=%s confidence=%.2f%%",
+            "Inference: image=%s probs=%s final_prediction=%s confidence=%.2f%%",
             image_path.name,
-            raw_output,
-            pneumonia_prob,
-            normal_prob,
-            self.threshold,
+            class_probabilities,
             prediction,
             confidence,
         )
@@ -129,7 +137,8 @@ class ChestXRayClassifier:
         return InferenceOutput(
             prediction=prediction,
             confidence=confidence,
-            pneumonia_probability=round(pneumonia_prob, 4),
-            normal_probability=round(normal_prob, 4),
-            raw_output=round(raw_output, 6),
+            class_probabilities=class_probabilities,
+            normal_probability=class_probabilities["NORMAL"],
+            pneumonia_probability=class_probabilities["PNEUMONIA"],
+            covid_probability=class_probabilities["COVID"],
         )

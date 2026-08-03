@@ -1,7 +1,9 @@
 """
 Copy Kaggle-style chest_xray splits into CareVision-AI/dataset/.
 
-The source folder must contain train/, val/, and test/ each with NORMAL/ and PNEUMONIA/.
+Source may contain NORMAL/ and PNEUMONIA/ (Kaggle pneumonia dataset).
+COVID/ is optional in the source; empty COVID folders are created at the target
+so you can add COVID images before training.
 
 Usage:
     py -3.11 backend/model/prepare_dataset.py --source path/to/chest_xray
@@ -13,7 +15,8 @@ import argparse
 import shutil
 from pathlib import Path
 
-CLASS_NAMES = ("NORMAL", "PNEUMONIA")
+REQUIRED_SOURCE_CLASSES = ("NORMAL", "PNEUMONIA")
+ALL_CLASSES = ("NORMAL", "PNEUMONIA", "COVID")
 SPLITS = ("train", "val", "test")
 
 MODEL_DIR = Path(__file__).resolve().parent
@@ -50,7 +53,7 @@ def _validate_source(source: Path) -> None:
         split_dir = source / split
         if not split_dir.is_dir():
             raise FileNotFoundError(f"Missing split in source: {split_dir}")
-        for class_name in CLASS_NAMES:
+        for class_name in REQUIRED_SOURCE_CLASSES:
             class_dir = split_dir / class_name
             if not class_dir.is_dir():
                 raise FileNotFoundError(f"Missing class folder: {class_dir}")
@@ -86,12 +89,22 @@ def prepare(source: Path, target: Path, use_copy: bool) -> None:
     print(f"Source:  {source.resolve()}")
     print(f"Target:  {target.resolve()}")
     for split in SPLITS:
-        for class_name in CLASS_NAMES:
+        for class_name in ALL_CLASSES:
             src = source / split / class_name
             dst = target / split / class_name
-            print(f"Linking {split}/{class_name} ...")
-            _link_or_copy(src, dst, use_copy)
-    print("\nDone. Run: cd backend && python model/train_model.py")
+            if src.is_dir() and any(src.iterdir()):
+                print(f"Linking {split}/{class_name} ...")
+                _link_or_copy(src, dst, use_copy)
+            else:
+                dst.mkdir(parents=True, exist_ok=True)
+                if class_name == "COVID":
+                    print(
+                        f"Created empty {split}/COVID/ — add COVID X-ray images here before training."
+                    )
+                else:
+                    print(f"Created empty {split}/{class_name}/ (source missing).")
+    print("\nDone. Add COVID images under dataset/*/COVID/, then:")
+    print("  cd backend && python model/train_model.py")
 
 
 def main() -> None:

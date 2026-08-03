@@ -7,7 +7,6 @@ from io import BytesIO
 from pathlib import Path
 from xml.sax.saxutils import escape
 
-import qrcode
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_RIGHT
 from reportlab.lib.pagesizes import letter
@@ -93,12 +92,24 @@ def _confidence_tier(pct: float) -> str:
     return "Low"
 
 
+def _prediction_key(prediction: str) -> str:
+    from app.services.prediction_labels import prediction_key
+
+    return prediction_key(prediction)
+
+
+def _is_abnormal_prediction(prediction: str) -> bool:
+    from app.services.prediction_labels import is_abnormal_prediction
+
+    return is_abnormal_prediction(prediction)
+
+
 def _confidence_interpretation(prediction: str, confidence_pct: float) -> tuple[str, str]:
     """Return (headline, explanation) for model confidence (certainty, not severity)."""
     tier = _confidence_tier(confidence_pct)
     headline = f"{tier} Confidence" if tier != "Very high" else "Very High Confidence"
-    is_pneumonia = prediction.strip().lower() == "pneumonia"
-    if is_pneumonia:
+    key = _prediction_key(prediction)
+    if key == "pneumonia":
         if confidence_pct >= 75:
             explanation = "The model strongly believes this image represents pneumonia."
         elif confidence_pct >= 60:
@@ -108,15 +119,29 @@ def _confidence_interpretation(prediction: str, confidence_pct: float) -> tuple[
                 "The model suggests pneumonia, but confidence is limited—"
                 "clinical review is especially important."
             )
+    elif key in {"covid", "covid-19"}:
+        if confidence_pct >= 75:
+            explanation = (
+                "The model strongly believes this image represents a COVID-19–related pattern."
+            )
+        elif confidence_pct >= 60:
+            explanation = (
+                "The model leans toward a COVID-19–related pattern, but with moderate certainty."
+            )
+        else:
+            explanation = (
+                "The model suggests COVID-19–related findings, but confidence is limited—"
+                "clinical review is especially important."
+            )
     elif confidence_pct >= 75:
         explanation = (
-            "The model strongly believes this image does not show a pneumonia pattern."
+            "The model strongly believes this image does not show a pneumonia or COVID pattern."
         )
     elif confidence_pct >= 60:
         explanation = "The model leans toward a normal study, but with moderate certainty."
     else:
         explanation = (
-            "The model did not detect pneumonia with high certainty—"
+            "The model did not detect pneumonia or COVID with high certainty—"
             "other pathology may still be present."
         )
     return headline, explanation
@@ -453,54 +478,6 @@ def _mini_info_table(
     return table
 
 
-def _online_report_url(scan_id: int, cfg: Settings) -> str:
-    base = cfg.frontend_url.rstrip("/")
-    return f"{base}/scans/{scan_id}"
-
-
-def _qr_code_image(url: str, size: float = 0.95 * inch) -> RLImage:
-    qr = qrcode.QRCode(version=1, box_size=8, border=2)
-    qr.add_data(url)
-    qr.make(fit=True)
-    img = qr.make_image(fill_color="black", back_color="white")
-    buffer = BytesIO()
-    img.save(buffer, format="PNG")
-    buffer.seek(0)
-    return RLImage(buffer, width=size, height=size)
-
-
-def _online_report_footer(
-    scan_id: int,
-    cfg: Settings,
-    styles: dict[str, ParagraphStyle],
-) -> Table:
-    url = _online_report_url(scan_id, cfg)
-    qr = _qr_code_image(url)
-    text = Paragraph(
-        f'<b>Online Report Access</b><br/><br/>'
-        f"Scan the QR code to open this study in CareVision AI.<br/>"
-        f'<font size="8" color="#475569">{escape(url)}</font><br/><br/>'
-        f"<i>Sign-in required. For authorized clinical and patient use only.</i>",
-        styles["body"],
-    )
-    panel = Table([[qr, text]], colWidths=[1.15 * inch, _CONTENT_WIDTH - 1.15 * inch])
-    panel.setStyle(
-        TableStyle(
-            [
-                ("BOX", (0, 0), (-1, -1), 0.5, _SLATE_200),
-                ("BACKGROUND", (0, 0), (-1, -1), _SLATE_50),
-                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                ("LEFTPADDING", (0, 0), (0, 0), 12),
-                ("LEFTPADDING", (1, 0), (1, 0), 10),
-                ("RIGHTPADDING", (1, 0), (1, 0), 12),
-                ("TOPPADDING", (0, 0), (-1, -1), 10),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 10),
-            ]
-        )
-    )
-    return panel
-
-
 def _clinical_recommendation_panel(
     recommendation_html: str,
     follow_up: str,
@@ -654,14 +631,17 @@ def _diagnostic_summary_table(
     model_version: str,
     styles: dict[str, ParagraphStyle],
 ) -> Table:
-    is_pneumonia = prediction.strip().lower() == "pneumonia"
-    finding_bg = _PNEUMONIA_BG if is_pneumonia else _NORMAL_BG
-    finding_fg = _PNEUMONIA_TEXT if is_pneumonia else _NORMAL_TEXT
-    finding_display = prediction.strip().title()
-    if is_pneumonia:
+    is_abnormal = _is_abnormal_prediction(prediction)
+    key = _prediction_key(prediction)
+    finding_bg = _PNEUMONIA_BG if is_abnormal else _NORMAL_BG
+    finding_fg = _PNEUMONIA_TEXT if is_abnormal else _NORMAL_TEXT
+    finding_display = "COVID" if key in {"covid", "covid-19"} else prediction.strip().title()
+    if key == "pneumonia":
         finding_sub = "AI pattern consistent with pneumonia"
+    elif key in {"covid", "covid-19"}:
+        finding_sub = "AI pattern consistent with COVID-19"
     else:
-        finding_sub = "No pneumonia pattern detected by AI"
+        finding_sub = "No pneumonia or COVID pattern detected by AI"
 
     tier = _confidence_tier(confidence_pct)
     sev_label = severity.strip() or "None"
@@ -787,9 +767,9 @@ def _structured_ai_analysis_summary(
     styles: dict[str, ParagraphStyle],
 ) -> Table:
     """Professional labeled AI Analysis Summary block for PDF reports."""
-    is_pneumonia = prediction.strip().lower() == "pneumonia"
-    finding_fg = _PNEUMONIA_TEXT if is_pneumonia else _NORMAL_TEXT
-    finding_bg = _PNEUMONIA_BG if is_pneumonia else _NORMAL_BG
+    is_abnormal = _is_abnormal_prediction(prediction)
+    finding_fg = _PNEUMONIA_TEXT if is_abnormal else _NORMAL_TEXT
+    finding_bg = _PNEUMONIA_BG if is_abnormal else _NORMAL_BG
     sev_label = severity.strip() or "None"
     if sev_label.lower() == "none":
         sev_display = "None"
@@ -901,9 +881,9 @@ def _clinical_impression(
     severity: str,
     styles: dict[str, ParagraphStyle],
 ) -> Table:
-    is_pneumonia = prediction.strip().lower() == "pneumonia"
+    key = _prediction_key(prediction)
     sev = severity.strip()
-    if is_pneumonia:
+    if key == "pneumonia":
         text = (
             f"The AI screening model classified this study as <b>pneumonia</b> with "
             f"<b>{confidence_pct}%</b> confidence ({_confidence_tier(confidence_pct).lower()}). "
@@ -914,10 +894,21 @@ def _clinical_impression(
             "Correlation with clinical presentation, laboratory findings, and physician "
             "interpretation is required before treatment decisions."
         )
+    elif key in {"covid", "covid-19"}:
+        text = (
+            f"The AI screening model classified this study as <b>COVID</b> with "
+            f"<b>{confidence_pct}%</b> confidence ({_confidence_tier(confidence_pct).lower()}). "
+        )
+        if sev and sev.lower() != "none":
+            text += f"Associated AI severity is graded as <b>{escape(sev)}</b>. "
+        text += (
+            "Correlation with clinical presentation, laboratory findings, and physician "
+            "interpretation is required before treatment decisions."
+        )
     else:
         text = (
-            f"The AI screening model did not detect a pneumonia pattern in this chest X-ray "
-            f"(<b>{confidence_pct}%</b> confidence for the reported class). "
+            f"The AI screening model did not detect a pneumonia or COVID pattern in this "
+            f"chest X-ray (<b>{confidence_pct}%</b> confidence for the reported class). "
             "This does not exclude other pathology; standard clinical review remains indicated."
         )
     table = Table([[Paragraph(text, styles["impression"])]], colWidths=[_CONTENT_WIDTH])
@@ -974,43 +965,83 @@ def _disclaimer_box(title: str, text: str, styles: dict[str, ParagraphStyle]) ->
     return table
 
 
-def _image_panel(
+def _framed_image(
+    path: Path,
+    *,
+    frame_w: float,
+    frame_h: float,
+) -> Table:
+    """Center an image inside a fixed-size frame so side-by-side cells align."""
+    img = _scaled_image(path, frame_w, frame_h)
+    frame = Table([[img]], colWidths=[frame_w], rowHeights=[frame_h])
+    frame.setStyle(
+        TableStyle(
+            [
+                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("TOPPADDING", (0, 0), (-1, -1), 0),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+                ("BACKGROUND", (0, 0), (-1, -1), _SLATE_50),
+                ("BOX", (0, 0), (-1, -1), 0.4, _SLATE_200),
+            ]
+        )
+    )
+    return frame
+
+
+def _image_panel_cell(
     figure_no: int,
     title: str,
     path: Path | None,
     styles: dict[str, ParagraphStyle],
     *,
     placeholder: str,
-    max_w: float,
-    max_h: float,
-) -> list:
-    caption = Paragraph(f"Figure {figure_no}. {title}", styles["image_caption"])
+    cell_w: float,
+    frame_w: float,
+    frame_h: float,
+) -> Table:
+    """Single radiology figure as a nested table (reliable side-by-side layout)."""
+    caption = Paragraph(f"<b>Figure {figure_no}.</b> {escape(title)}", styles["image_caption"])
     if path and path.is_file():
-        content: list = [
-            caption,
-            Spacer(1, 6),
-            _scaled_image(path, max_w, max_h),
-            Spacer(1, 4),
-            Paragraph("Source: stored study image", styles["figure_label"]),
-        ]
+        body: Table | Paragraph = _framed_image(path, frame_w=frame_w, frame_h=frame_h)
+        source = Paragraph("Source: stored study image", styles["figure_label"])
     else:
-        ph_table = Table(
+        body = Table(
             [[Paragraph(placeholder, styles["body"])]],
-            colWidths=[max_w],
-            rowHeights=[max_h * 0.8],
+            colWidths=[frame_w],
+            rowHeights=[frame_h],
         )
-        ph_table.setStyle(
+        body.setStyle(
             TableStyle(
                 [
                     ("BACKGROUND", (0, 0), (-1, -1), _SLATE_50),
-                    ("BOX", (0, 0), (-1, -1), 0.5, _SLATE_200),
+                    ("BOX", (0, 0), (-1, -1), 0.4, _SLATE_200),
                     ("ALIGN", (0, 0), (-1, -1), "CENTER"),
                     ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
                 ]
             )
         )
-        content = [caption, Spacer(1, 6), ph_table]
-    return content
+        source = Paragraph("Source: unavailable", styles["figure_label"])
+
+    panel = Table(
+        [[caption], [Spacer(1, 6)], [body], [Spacer(1, 4)], [source]],
+        colWidths=[cell_w],
+    )
+    panel.setStyle(
+        TableStyle(
+            [
+                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("TOPPADDING", (0, 0), (-1, -1), 0),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+            ]
+        )
+    )
+    return panel
 
 
 def _build_imaging_section(
@@ -1021,33 +1052,38 @@ def _build_imaging_section(
     if not xray_path and not heatmap_path:
         return []
 
-    img_w = 2.95 * inch
-    img_h = 2.75 * inch
-    left = _image_panel(
+    # Two equal columns that always sit on one horizontal row.
+    cell_w = (_CONTENT_WIDTH - 0.12 * inch) / 2
+    frame_w = cell_w - 0.16 * inch
+    frame_h = 2.55 * inch
+
+    left = _image_panel_cell(
         1,
-        "Posteroanterior chest radiograph (study image)",
+        "Chest radiograph (study image)",
         xray_path,
         styles,
         placeholder="Study image unavailable",
-        max_w=img_w,
-        max_h=img_h,
+        cell_w=cell_w,
+        frame_w=frame_w,
+        frame_h=frame_h,
     )
-    right = _image_panel(
+    right = _image_panel_cell(
         2,
         "Grad-CAM explainability overlay",
         heatmap_path,
         styles,
         placeholder="Explainability overlay not available",
-        max_w=img_w,
-        max_h=img_h,
+        cell_w=cell_w,
+        frame_w=frame_w,
+        frame_h=frame_h,
     )
 
-    grid = Table([[left, right]], colWidths=[3.15 * inch, 3.15 * inch])
+    grid = Table([[left, right]], colWidths=[cell_w, cell_w])
     grid.setStyle(
         TableStyle(
             [
                 ("BOX", (0, 0), (-1, -1), 0.5, _SLATE_200),
-                ("INNERGRID", (0, 0), (-1, -1), 0.5, _SLATE_200),
+                ("LINEBEFORE", (1, 0), (1, 0), 0.5, _SLATE_200),
                 ("VALIGN", (0, 0), (-1, -1), "TOP"),
                 ("ALIGN", (0, 0), (-1, -1), "CENTER"),
                 ("LEFTPADDING", (0, 0), (-1, -1), 8),
@@ -1317,11 +1353,6 @@ def generate_scan_report_pdf(
 
     story.extend(
         [
-            _section_block(
-                "Online Report Access",
-                styles,
-                _online_report_footer(scan.id, report_cfg, styles),
-            ),
             _section_block(
                 "Important Notices",
                 styles,

@@ -1,7 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type Accent = "teal" | "rose" | "slate" | "cyan" | "emerald";
+type Accent = "teal" | "rose" | "slate" | "cyan" | "emerald" | "amber";
 
 const accentClasses: Record<Accent, { card: string; icon: string }> = {
   teal: {
@@ -23,6 +23,10 @@ const accentClasses: Record<Accent, { card: string; icon: string }> = {
   emerald: {
     card: "from-emerald-50 via-white to-teal-50/80 ring-emerald-100/80 hover:shadow-emerald-900/10 dark:from-emerald-500/15 dark:via-slate-900 dark:to-teal-500/10 dark:ring-emerald-500/25 dark:hover:shadow-emerald-500/10",
     icon: "bg-emerald-100 text-emerald-700 ring-emerald-200/60 dark:bg-emerald-500/20 dark:text-emerald-300 dark:ring-emerald-400/30",
+  },
+  amber: {
+    card: "from-amber-50 via-white to-orange-50/60 ring-amber-100/80 hover:shadow-amber-900/10 dark:from-amber-500/15 dark:via-slate-900 dark:to-orange-500/10 dark:ring-amber-500/25 dark:hover:shadow-amber-500/10",
+    icon: "bg-amber-100 text-amber-800 ring-amber-200/60 dark:bg-amber-500/20 dark:text-amber-300 dark:ring-amber-400/30",
   },
 };
 
